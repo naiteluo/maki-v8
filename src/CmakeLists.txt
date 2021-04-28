@@ -1,15 +1,19 @@
+# set binary name
 set(BINARY ${CMAKE_PROJECT_NAME})
-
+# glob files and save to SOURCES
 file(GLOB_RECURSE SOURCES LIST_DIRECTORIES true *.h *.cpp)
 
 set(SOURCES ${SOURCES})
 
+# add sources as static library 
 add_library(${BINARY}_lib STATIC ${SOURCES})
 
-link_directories(${CMAKE_SOURCE_DIR}/../../v8/v8/out.gn/x64.release.sample/obj)
+# link build output of v8 by directories
+link_directories(${CMAKE_SOURCE_DIR}/lib/v8/out.gn/x64.release.sample/obj)
 
 add_executable(${BINARY}_run ${SOURCES})
 
+# fix compress pointer issue
 add_definitions(-DV8_COMPRESS_POINTERS)
 
 target_link_libraries(${BINARY}_run v8_monolith)

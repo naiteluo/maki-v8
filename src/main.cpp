@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[])
 {
-    std::cout << "Hello v" << Demo::say(4) << std::endl;
+    std::cout << "Hello V" << Demo::say(4) << std::endl;
     // Initialize V8.
     v8::V8::InitializeICUDefaultLocation(argv[0]);
     v8::V8::InitializeExternalStartupData(argv[0]);
@@ -38,12 +38,7 @@ int main(int argc, char *argv[])
                 // js source code
                 var a = 'Hello';
                 var b = ', World!';
-                var p = new Promise((resolve, reject) => {
-                    resolve(a + b);
-                });
-                p.then((res) => {
-                    res;
-                })
+                a + b;
             )";
             // Create a string containing the JavaScript source code.
             v8::Local<v8::String> source =

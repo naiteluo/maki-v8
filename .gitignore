@@ -1,3 +1,11 @@
+# maki project
+
+# ignore v8 and gclient files
+lib/v8
+lib/.cipd
+lib/.gclient
+lib/.gclient_*
+
 ##### Windows
 # Windows thumbnail cache files
 Thumbs.db
