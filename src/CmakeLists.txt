@@ -4,6 +4,12 @@ file(GLOB_RECURSE SOURCES LIST_DIRECTORIES true *.h *.cpp)
 
 set(SOURCES ${SOURCES})
 
+add_library(${BINARY}_lib STATIC ${SOURCES})
+
+link_directories(${CMAKE_SOURCE_DIR}/../../v8/v8/out.gn/x64.release.sample/obj)
+
 add_executable(${BINARY}_run ${SOURCES})
 
-add_library(${BINARY}_lib STATIC ${SOURCES})
+add_definitions(-DV8_COMPRESS_POINTERS)
+
+target_link_libraries(${BINARY}_run v8_monolith)
