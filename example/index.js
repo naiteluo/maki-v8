@@ -1,2 +1,1 @@
-"hello " + "world";
-// "hello " + "v8";
+log("hello " + "V8 :)");

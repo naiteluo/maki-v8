@@ -12,9 +12,19 @@
 #include "v8-internal.h"
 #include "v8.h"
 
+static void LogCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+  if (args.Length() < 1)
+    return;
+  Isolate *isolate = args.GetIsolate();
+  v8::HandleScope scope(isolate);
+  v8::Local<v8::Value> arg = args[0];
+  String::Utf8Value value(isolate, arg);
+  printf("C++ LOG: %s\n", *value);
+}
+
 int main(int argc, char *argv[]) {
 
-  std::cout << "Hello V" << Demo::say(4) << std::endl;
+  //   std::cout << "Hello V" << Demo::say(4) << std::endl;
   // Initialize V8.
   v8::V8::InitializeICUDefaultLocation(argv[0]);
   v8::V8::InitializeExternalStartupData(argv[0]);
@@ -32,8 +42,14 @@ int main(int argc, char *argv[]) {
     // Create a stack-allocated handle scope.
     v8::HandleScope handle_scope(isolate);
 
-    // Create a new context.
-    v8::Local<v8::Context> context = v8::Context::New(isolate);
+    // Create a template for the global object where we set the
+    // built-in global functions.
+    v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
+    global->Set(isolate, "log",
+                v8::FunctionTemplate::New(isolate, LogCallback));
+
+    // Create a new context. 并设置global模板
+    v8::Local<v8::Context> context = v8::Context::New(isolate, NULL, global);
 
     // Enter the context for compiling and running the hello world script.
     v8::Context::Scope context_scope(context);
