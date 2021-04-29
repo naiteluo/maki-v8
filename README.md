@@ -1,4 +1,4 @@
-# maki 
+# maki
 
 Makise Kurisu, a v8 embed opengl renderer.
 
@@ -6,54 +6,68 @@ Makise Kurisu, a v8 embed opengl renderer.
 
 1. get gtest from submodule
 
-    ```bash
-    git submodule init
-    git submodule updata --init --recursive
-    ```
+   ```bash
+   git submodule init
+   git submodule updata --init --recursive
+   ```
 
 2. get v8
 
-    ```
-    cd lib
+   ```
+   cd lib
 
-    fetch v8 # it may take a long time
+   fetch v8 # it may take a long time
 
-    cd v8
+   cd v8
 
-    # start to configure and build
-    # create build configuration with helper script
-    tools/dev/v8gen.py x64.release.sample
-    # inspect configuration
-    gn args out.gn/x64.release.sample
-    # build (take x64 platform for example)
-    ninja -C out.gn/x64.release.sample v8_monolith
+   # start to configure and build
+   # create build configuration with helper script
+   tools/dev/v8gen.py x64.release.sample
+   # inspect configuration
+   gn args out.gn/x64.release.sample
+   # build (take x64 platform for example)
+   ninja -C out.gn/x64.release.sample v8_monolith
 
-    # try to build v8 example helloworld
-    g++ -I. -Iinclude samples/hello-world.cc -o hello_world -lv8_monolith -Lout.gn/x64.release.sample/obj/ -pthread -std=c++14 -DV8_COMPRESS_POINTERS
-    # run
-    ./hello_world
+   # try to build v8 example helloworld
+   g++ -I. -Iinclude samples/hello-world.cc -o hello_world -lv8_monolith -Lout.gn/x64.release.sample/obj/ -pthread -std=c++14 -DV8_COMPRESS_POINTERS
+   # run
+   ./hello_world
 
-    ```
+   ```
 
-    Finished! Now you have a linkable static v8 library in `./lib/v8/out.gn/x64.release.sample/obj`
+   Finished! Now you have a linkable static v8 library in `./lib/v8/out.gn/x64.release.sample/obj`
 
-    To use v8 in your cmake project, add this to the `CMakeLists.txt`
+   To use v8 in your cmake project, add this to the `CMakeLists.txt`
 
-    ```
-    # link build output of v8 by directories
-    link_directories(${CMAKE_SOURCE_DIR}/lib/v8/out.gn/x64.release.sample/obj)
-    # link your app to v8
-    target_link_libraries(${BINARY}_run v8_monolith)
-    ```
+   ```
+   # link build output of v8 by directories
+   link_directories(${CMAKE_SOURCE_DIR}/lib/v8/out.gn/x64.release.sample/obj)
+   # link your app to v8
+   target_link_libraries(${BINARY}_run v8_monolith)
+   ```
 
-    If you already have your v8 project checked out in other postion, you can also change linkable path to your v8 build results path. But **don't commit!!**
+   If you already have your v8 project checked out in other postion, you can also change linkable path to your v8 build results path. But **don't commit!!**
 
-    References:
+   References:
 
-    - [get v8 srouce code](https://v8.dev/docs/source-code)
-    - [build for embed](https://v8.dev/docs/embed#advanced-guide)
+   - [get v8 srouce code](https://v8.dev/docs/source-code)
+   - [build for embed](https://v8.dev/docs/embed#advanced-guide)
 
-## Build and run (Debug)
+## IDE setups
+
+vscode extensions recommanded:
+
+- [C/C++ extensions](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)
+- [CMake Tools extensions](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools)
+- [clangd: C and C++ completion, navigation, and insights](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd)
+
+using clangd in cmake project, you need to generate `compile_commands.json` file. clangd will look for it to understanding your project build flags or other buidling context. [Read for more informations.](https://prereleases.llvm.org/8.0.0/rc3/tools/clang/tools/extra/docs/clangd/Installation.html)
+
+```bash
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+```
+
+## Build and run
 
 1. Configure
 
@@ -67,6 +81,11 @@ Makise Kurisu, a v8 embed opengl renderer.
        -B./build \
        -G Ninja
    ```
+
+   helps:
+
+   - `CMAKE_BUILD_TYPE:STRING` define build mode.
+   - `-G Ninja` specify build system generator.
 
 2. Build
 
