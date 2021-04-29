@@ -1,72 +1,79 @@
+#include "./utils/FileReader.h"
+#include "Demo.h"
+#include <cstdio>
+#include <filesystem>
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <iostream>
-#include "Demo.h"
+#include <string>
 
 #include "libplatform/libplatform.h"
+#include "v8-internal.h"
 #include "v8.h"
 
-int main(int argc, char *argv[])
-{
-    std::cout << "Hello V" << Demo::say(4) << std::endl;
-    // Initialize V8.
-    v8::V8::InitializeICUDefaultLocation(argv[0]);
-    v8::V8::InitializeExternalStartupData(argv[0]);
-    std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
-    v8::V8::InitializePlatform(platform.get());
-    v8::V8::Initialize();
-    // Create a new Isolate and make it the current one.
-    v8::Isolate::CreateParams create_params;
-    create_params.array_buffer_allocator =
-        v8::ArrayBuffer::Allocator::NewDefaultAllocator();
-    v8::Isolate *isolate = v8::Isolate::New(create_params);
+int main(int argc, char *argv[]) {
+
+  std::cout << "Hello V" << Demo::say(4) << std::endl;
+  // Initialize V8.
+  v8::V8::InitializeICUDefaultLocation(argv[0]);
+  v8::V8::InitializeExternalStartupData(argv[0]);
+  std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
+  v8::V8::InitializePlatform(platform.get());
+  v8::V8::Initialize();
+  // Create a new Isolate and make it the current one.
+  v8::Isolate::CreateParams create_params;
+  create_params.array_buffer_allocator =
+      v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+  v8::Isolate *isolate = v8::Isolate::New(create_params);
+  {
+    v8::Isolate::Scope isolate_scope(isolate);
+
+    // Create a stack-allocated handle scope.
+    v8::HandleScope handle_scope(isolate);
+
+    // Create a new context.
+    v8::Local<v8::Context> context = v8::Context::New(isolate);
+
+    // Enter the context for compiling and running the hello world script.
+    v8::Context::Scope context_scope(context);
+
     {
-        v8::Isolate::Scope isolate_scope(isolate);
+      v8::Local<v8::String> source;
+      std::string filePath;
+      if (argv[1] == NULL) {
+        filePath = "../../example/index.js";
+      } else {
+        filePath = argv[1];
+      }
 
-        // Create a stack-allocated handle scope.
-        v8::HandleScope handle_scope(isolate);
+      if (!FileReader::read(isolate, filePath).ToLocal(&source)) {
+        fprintf(stderr, "Error reading '%s'.\n", filePath.c_str());
+      }
 
-        // Create a new context.
-        v8::Local<v8::Context> context = v8::Context::New(isolate);
+      // Compile the source code.
+      v8::Local<v8::Script> script =
+          v8::Script::Compile(context, source).ToLocalChecked();
 
-        // Enter the context for compiling and running the hello world script.
-        v8::Context::Scope context_scope(context);
+      // Run the script to get the result.
+      v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
 
-        {
-            const char jssource[] = R"(
-                // js source code
-                var a = 'Hello';
-                var b = ', World!';
-                a + b;
-            )";
-            // Create a string containing the JavaScript source code.
-            v8::Local<v8::String> source =
-                v8::String::NewFromUtf8Literal(isolate, jssource);
+      // Convert the result to an UTF8 string and print it.
+      v8::String::Utf8Value utf8(isolate, result);
+      printf("%s\n", *utf8);
+    }
 
-            // Compile the source code.
-            v8::Local<v8::Script> script =
-                v8::Script::Compile(context, source).ToLocalChecked();
-
-            // Run the script to get the result.
-            v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
-
-            // Convert the result to an UTF8 string and print it.
-            v8::String::Utf8Value utf8(isolate, result);
-            printf("%s\n", *utf8);
-        }
-
-        {
-            // Use the JavaScript API to generate a WebAssembly module.
-            //
-            // |bytes| contains the binary format for the following module:
-            //
-            //     (func (export "add") (param i32 i32) (result i32)
-            //       get_local 0
-            //       get_local 1
-            //       i32.add)
-            //
-            const char csource[] = R"(
+    {
+      // Use the JavaScript API to generate a WebAssembly module.
+      //
+      // |bytes| contains the binary format for the following module:
+      //
+      //     (func (export "add") (param i32 i32) (result i32)
+      //       get_local 0
+      //       get_local 1
+      //       i32.add)
+      //
+      const char csource[] = R"(
         let bytes = new Uint8Array([
           0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, 0x01, 0x07, 0x01,
           0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f, 0x03, 0x02, 0x01, 0x00, 0x07,
@@ -78,27 +85,27 @@ int main(int argc, char *argv[])
         instance.exports.add(3, 4);
       )";
 
-            // Create a string containing the JavaScript source code.
-            v8::Local<v8::String> source =
-                v8::String::NewFromUtf8Literal(isolate, csource);
+      // Create a string containing the JavaScript source code.
+      v8::Local<v8::String> source =
+          v8::String::NewFromUtf8Literal(isolate, csource);
 
-            // Compile the source code.
-            v8::Local<v8::Script> script =
-                v8::Script::Compile(context, source).ToLocalChecked();
+      // Compile the source code.
+      v8::Local<v8::Script> script =
+          v8::Script::Compile(context, source).ToLocalChecked();
 
-            // Run the script to get the result.
-            v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
+      // Run the script to get the result.
+      v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
 
-            // Convert the result to a uint32 and print it.
-            uint32_t number = result->Uint32Value(context).ToChecked();
-            printf("3 + 4 = %u\n", number);
-        }
+      // Convert the result to a uint32 and print it.
+      uint32_t number = result->Uint32Value(context).ToChecked();
+      printf("3 + 4 = %u\n", number);
     }
+  }
 
-    // Dispose the isolate and tear down V8.
-    isolate->Dispose();
-    v8::V8::Dispose();
-    v8::V8::ShutdownPlatform();
-    delete create_params.array_buffer_allocator;
-    return 0;
+  // Dispose the isolate and tear down V8.
+  isolate->Dispose();
+  v8::V8::Dispose();
+  v8::V8::ShutdownPlatform();
+  delete create_params.array_buffer_allocator;
+  return 0;
 }
