@@ -1,0 +1,15 @@
+{
+  "files.exclude": {
+    "**/.vscode": false,
+    "**/CMakeFiles": true,
+    "cmake_install*": true,
+    "CMakeCache*": true
+  },
+  "search.exclude": {
+    "**/out*": true,
+    "**/build*": true,
+    "CMakeFiles": true,
+    ".cipd": true,
+    ".gclent*": true
+  }
+}
