@@ -1,7 +1,7 @@
 # set binary name
 set(BINARY ${CMAKE_PROJECT_NAME})
 # glob files and save to SOURCES
-file(GLOB_RECURSE SOURCES LIST_DIRECTORIES true *.h *.cpp)
+file(GLOB_RECURSE SOURCES LIST_DIRECTORIES true *.h *.hpp *.cpp)
 
 set(SOURCES ${SOURCES})
 
@@ -16,4 +16,7 @@ add_executable(${BINARY}_run ${SOURCES})
 # fix compress pointer issue
 add_definitions(-DV8_COMPRESS_POINTERS)
 
+# link v8
 target_link_libraries(${BINARY}_run v8_monolith)
+# link opengl related lib
+target_link_libraries(${BINARY}_run ${ALL_LIBS})

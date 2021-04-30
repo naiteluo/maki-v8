@@ -33,7 +33,7 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ### GLEW ###
 
 set(GLEW_SOURCE
-	glew/src/glew.c
+	glew-2.2.0/src/glew.c
 )
 
 set(GLEW_HEADERS
