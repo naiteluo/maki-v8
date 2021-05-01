@@ -4,14 +4,18 @@ Makise Kurisu, a v8 embed opengl renderer.
 
 ## Setups (first time step)
 
-1. get gtest from submodule
+1. get gtest and opengl related module from submodule
 
    ```bash
    git submodule init
    git submodule updata --init --recursive
    ```
 
-2. get v8
+2. dowload glew and extra to lib
+
+   [GLEW 2.1.0](https://sourceforge.net/projects/glew/files/glew/2.1.0/)
+
+3. get v8
 
    ```
    cd lib
