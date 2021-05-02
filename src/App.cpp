@@ -15,8 +15,7 @@ GLFWwindow *window;
 #include <common-from-ogl/shader.hpp>
 #include <common-from-ogl/text2D.hpp>
 
-int App::Intialize() {
-  printf("sdkf123123jsdkf");
+int App::Initialize() {
   // Initialise GLFW
   if (!glfwInit()) {
     fprintf(stderr, "Failed to initialize GLFW\n");
@@ -146,7 +145,6 @@ void App::Run() {
 
 void App::Stop() {
   cleanupText2D();
-
   // Close OpenGL window and terminate GLFW
   glfwTerminate();
 }

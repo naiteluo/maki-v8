@@ -1,15 +1,8 @@
-#include "Demo.h"
 #include "utils/FileReader.h"
-#include <cstdio>
-#include <filesystem>
-#include <iostream>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <string>
 
 #include "libplatform/libplatform.h"
-#include "v8-internal.h"
 #include "v8.h"
 
 #include "App.h"
@@ -26,7 +19,6 @@ static void LogCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
 int main(int argc, char *argv[]) {
 
-  //   std::cout << "Hello V" << Demo::say(4) << std::endl;
   // Initialize V8.
   v8::V8::InitializeICUDefaultLocation(argv[0]);
   v8::V8::InitializeExternalStartupData(argv[0]);
@@ -126,7 +118,7 @@ int main(int argc, char *argv[]) {
   v8::V8::ShutdownPlatform();
   delete create_params.array_buffer_allocator;
 
-  App::Intialize();
+  App::Initialize();
   App *app = new App();
   app->OpenWindow();
   app->Run();

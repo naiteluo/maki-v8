@@ -8,7 +8,7 @@ private:
   void initializeGLEW();
 
 public:
-  static int Intialize();
+  static int Initialize();
   App();
   ~App();
   int OpenWindow();
