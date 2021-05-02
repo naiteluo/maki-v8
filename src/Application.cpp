@@ -10,12 +10,12 @@ GLFWwindow *window;
 #include <glm/glm.hpp>
 #include <stdio.h>
 
-#include "App.h"
+#include "Application.h"
 
-#include <common-from-ogl/shader.hpp>
-#include <common-from-ogl/text2D.hpp>
+#include <common_from_ogl/shader.hpp>
+#include <common_from_ogl/text2D.hpp>
 
-int App::Initialize() {
+int Application::Initialize() {
   // Initialise GLFW
   if (!glfwInit()) {
     fprintf(stderr, "Failed to initialize GLFW\n");
@@ -32,11 +32,11 @@ int App::Initialize() {
   return 0;
 }
 
-App::App() {}
+Application::Application() {}
 
-App::~App() { _window = NULL; }
+Application::~Application() { _window = NULL; }
 
-int App::OpenWindow() {
+int Application::OpenWindow() {
   // Open a window and create its OpenGL context
   _window = glfwCreateWindow(1024, 768, "V8", NULL, NULL);
   if (_window == NULL) {
@@ -61,7 +61,7 @@ int App::OpenWindow() {
   return 0;
 }
 
-void App::Run() {
+void Application::Run() {
 
   // Dark blue background
   glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
@@ -143,7 +143,7 @@ void App::Run() {
          glfwWindowShouldClose(_window) == 0);
 }
 
-void App::Stop() {
+void Application::Stop() {
   cleanupText2D();
   // Close OpenGL window and terminate GLFW
   glfwTerminate();

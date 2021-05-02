@@ -1,18 +1,18 @@
-#ifndef MAKI_APP_H
-#define MAKI_APP_H
+#ifndef MAKI_APPLICATION_H
+#define MAKI_APPLICATION_H
 #include <GLFW/glfw3.h>
 
-class App {
+class Application {
 private:
   GLFWwindow *_window;
   void initializeGLEW();
 
 public:
   static int Initialize();
-  App();
-  ~App();
+  Application();
+  ~Application();
   int OpenWindow();
   void Run();
   void Stop();
 };
-#endif //MAKI_APP_H
+#endif //MAKI_APPLICATION_H
