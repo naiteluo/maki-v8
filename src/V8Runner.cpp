@@ -52,19 +52,21 @@ void V8Runner::Run() {
         // **important** Create a stack-allocated handle scope.
         v8::HandleScope handle_scope(_isolate);
 
-        // Create a template for the global object where we set the
-        // built-in global functions.
-        v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(_isolate);
-        global->Set(_isolate, "log",
-                    v8::FunctionTemplate::New(_isolate, LogCallback));
+//        // Create a template for the global object where we set the
+//        // built-in global functions.
+//        v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(_isolate);
+//        global->Set(_isolate, "log",
+//                    v8::FunctionTemplate::New(_isolate, LogCallback));
+//
+//        // Create a new context and set global template.
+//        v8::Local<v8::Context> context = v8::Context::New(_isolate, NULL, global);
+//
+//        // **important** Enter the context for compiling and running the hello world script.
+//        v8::Context::Scope context_scope(context);
 
-        // Create a new context and set global template.
-        v8::Local<v8::Context> context = v8::Context::New(_isolate, NULL, global);
-
-        // **important** Enter the context for compiling and running the hello world script.
-        v8::Context::Scope context_scope(context);
 
         run_demo1(_isolate, argv);
+
         run_demo2(_isolate, argv);
     }
 }

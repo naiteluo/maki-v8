@@ -1,2 +1,2 @@
-log("hello " + "V8 :)");
-log("i am in demo1.");
+log_a("hello " + "V8 :)");
+log_a("i am in demo1.");
