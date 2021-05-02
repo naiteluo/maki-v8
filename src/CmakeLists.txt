@@ -1,7 +1,7 @@
 # set binary name
 set(BINARY ${CMAKE_PROJECT_NAME})
 # glob files and save to SOURCES
-file(GLOB_RECURSE SOURCES LIST_DIRECTORIES true *.h *.hpp *.cpp)
+file(GLOB_RECURSE SOURCES LIST_DIRECTORIES true *.h *.hpp *.cpp *.cc)
 
 set(SOURCES ${SOURCES})
 
