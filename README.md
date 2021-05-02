@@ -4,20 +4,20 @@ Makise Kurisu, a v8 embed opengl renderer.
 
 ## Setups (first time step)
 
-1. get gtest and opengl related module from submodule
+1. Get gtest and opengl related module from submodule
 
    ```bash
    git submodule init
    git submodule updata --init --recursive
    ```
 
-2. dowload glew and extra to lib
+2. Download glew and extra to lib
 
    [GLEW 2.1.0](https://sourceforge.net/projects/glew/files/glew/2.1.0/)
 
-3. get v8
+3. Get v8
 
-   ```
+   ```bash
    cd lib
 
    fetch v8 # it may take a long time
@@ -43,14 +43,14 @@ Makise Kurisu, a v8 embed opengl renderer.
 
    To use v8 in your cmake project, add this to the `CMakeLists.txt`
 
-   ```
+   ```bash
    # link build output of v8 by directories
    link_directories(${CMAKE_SOURCE_DIR}/lib/v8/out.gn/x64.release.sample/obj)
    # link your app to v8
    target_link_libraries(${BINARY}_run v8_monolith)
    ```
 
-   If you already have your v8 project checked out in other postion, you can also change linkable path to your v8 build results path. But **don't commit!!**
+   If you already have your v8 project checked out in other directory, you can also change linkable path to your v8 build results path. But **don't commit!!**
 
    References:
 
@@ -59,19 +59,35 @@ Makise Kurisu, a v8 embed opengl renderer.
 
 ## IDE setups
 
-vscode extensions recommanded:
+### vscode
+
+vscode recommended extensions for c/c++:
 
 - [C/C++ extensions](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)
 - [CMake Tools extensions](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools)
 - [clangd: C and C++ completion, navigation, and insights](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd)
 
-using clangd in cmake project, you need to generate `compile_commands.json` file. clangd will look for it to understanding your project build flags or other buidling context. [Read for more informations.](https://prereleases.llvm.org/8.0.0/rc3/tools/clang/tools/extra/docs/clangd/Installation.html)
+Using clangd in cmake project, you'll need to generate `compile_commands.json` file. 
+clangd will look for it to understanding your project build flags or other building context. [Read for more informations.](https://prereleases.llvm.org/8.0.0/rc3/tools/clang/tools/extra/docs/clangd/Installation.html)
 
 ```bash
 cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1
 ```
 
+**Regenerate** `compile_commands.json` after big changes of the project structure or add new library.
+
+### CLion
+
+Open project and wait for initializing and file indexing. [Get CLion](https://www.jetbrains.com/clion/).
+
+**notes for debug:**
+
+Create new CMake profile in Preferences panel, set build type to "Debug". 
+Otherwise, your debugger will not be triggered.
+
 ## Build and run
+
+### build and run in cli
 
 1. Configure
 
@@ -111,9 +127,15 @@ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1
    ./build/test/maki_test
    ```
 
+### build and run in vscode
+
 Or just use vscode extensions to configure, build and run in vscode.
 
 - [C/C++ extensions](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)
 - [CMake Tools extensions](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools)
 
-Debug? Use vscode.
+## Debug
+
+Use vscode or clion for life-saving.
+
+
