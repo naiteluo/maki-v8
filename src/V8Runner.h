@@ -32,6 +32,10 @@ public:
      * Main entry of JS Demos
      */
     void Run();
+
+    void Prepare();
+
+    void Loop();
 };
 
 

@@ -1,22 +1,52 @@
 # set binary name
 set(BINARY ${CMAKE_PROJECT_NAME})
+
 # glob files and save to SOURCES
 file(GLOB_RECURSE SOURCES LIST_DIRECTORIES true *.h *.hpp *.cpp *.cc)
 
-set(SOURCES ${SOURCES})
+# get sub sources
+file(GLOB_RECURSE V8_RUNNER_SOURCES LIST_DIRECTORIES true V8Runner.h V8Runner.cpp)
+file(GLOB_RECURSE V8_DEMOS_SOURCES LIST_DIRECTORIES true v8_demos/*.h v8_demos/*.cpp)
+file(GLOB_RECURSE UTILS_SOURCES LIST_DIRECTORIES true utils/*.h utils/*.cpp)
+file(GLOB_RECURSE COMMON_OGL_SOURCES LIST_DIRECTORIES true common_from_ogl/*.hpp common_from_ogl/*.cpp)
+file(GLOB_RECURSE APPLICATIONS_SOURCES LIST_DIRECTORIES true applications/*.h applications/*.cpp)
 
 # add sources as static library 
 add_library(${BINARY}_lib STATIC ${SOURCES})
 
+
 # link build output of v8 by directories
 link_directories(${CMAKE_SOURCE_DIR}/lib/v8/out.gn/x64.release.sample/obj)
-
-add_executable(${BINARY}_run ${SOURCES})
-
 # fix compress pointer issue
 add_definitions(-DV8_COMPRESS_POINTERS)
 
+## add executable: main ##
+add_executable(
+        ${BINARY}_run
+        main.cpp
+        ${V8_RUNNER_SOURCES}
+        ${V8_DEMOS_SOURCES}
+        ${UTILS_SOURCES}
+        ${COMMON_OGL_SOURCES}
+        ${APPLICATIONS_SOURCES}
+)
+
+## add executable: start ##
+add_executable(
+        ${BINARY}_start_run
+        start.cpp
+        ${V8_RUNNER_SOURCES}
+        ${V8_DEMOS_SOURCES}
+        ${UTILS_SOURCES}
+        ${COMMON_OGL_SOURCES}
+        ${APPLICATIONS_SOURCES}
+)
+
+
 # link v8
 target_link_libraries(${BINARY}_run v8_monolith)
+target_link_libraries(${BINARY}_start_run v8_monolith)
+
 # link opengl related lib
 target_link_libraries(${BINARY}_run ${ALL_LIBS})
+target_link_libraries(${BINARY}_start_run ${ALL_LIBS})
