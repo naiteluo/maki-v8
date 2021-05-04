@@ -6,14 +6,18 @@
 #include <cstdio>
 #include <glm/glm.hpp>
 #include <stdio.h>
+#include "libplatform/libplatform.h"
+#include <v8.h>
 
-#include "JSGLApplication.h"
-#include "V8Runner.h"
+#include "w8.h"
 
 #include <common_from_ogl/shader.hpp>
 #include <common_from_ogl/text2D.hpp>
+#include "uv.h"
 
-int JSGLApplication::Initialize() {
+std::unique_ptr<v8::Platform> w8::platform = NULL;
+
+int w8::Initialize(char **argv) {
     // Initialise GLFW
     if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
@@ -27,19 +31,33 @@ int JSGLApplication::Initialize() {
                    GL_TRUE); // To make MacOS happy; should not be needed
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+    // Initialize V8.
+    v8::V8::InitializeICUDefaultLocation(argv[0]);
+    v8::V8::InitializeExternalStartupData(argv[0]);
+    platform = v8::platform::NewDefaultPlatform();
+    v8::V8::InitializePlatform(platform.get());
+    v8::V8::Initialize();
+
     return 0;
 }
 
-JSGLApplication::JSGLApplication(V8Runner *runner) {
-    _runner = runner;
+void w8::Dispose() {
+    v8::V8::Dispose();
+    v8::V8::ShutdownPlatform();
 }
 
-JSGLApplication::~JSGLApplication() {
+w8::w8() {
+    _create_params.array_buffer_allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+    _isolate = v8::Isolate::New(_create_params);
+}
+
+w8::~w8() {
     _window = NULL;
-    _runner = NULL;
+    _isolate->Dispose();
+    delete _create_params.array_buffer_allocator;
 }
 
-int JSGLApplication::OpenWindow() {
+int w8::OpenWindow() {
     // Open a window and create its OpenGL context
     _window = glfwCreateWindow(1024, 768, "V8", NULL, NULL);
     if (_window == NULL) {
@@ -64,7 +82,7 @@ int JSGLApplication::OpenWindow() {
     return 0;
 }
 
-void JSGLApplication::Run() {
+void w8::Run() {
 
     // Dark blue background
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
@@ -73,20 +91,6 @@ void JSGLApplication::Run() {
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
-    // Create and compile our GLSL program from the shaders
-    GLuint programID = LoadShaders("SimpleVertexShader.vertexshader",
-                                   "SimpleFragmentShader.fragmentshader");
-
-    static const GLfloat g_vertex_buffer_data[] = {
-            -1.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-    };
-
-    GLuint vertexbuffer;
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data),
-                 g_vertex_buffer_data, GL_STATIC_DRAW);
-
     // Initialize our little text library with the Holstein font
     initText2D("Holstein.DDS");
 
@@ -94,13 +98,27 @@ void JSGLApplication::Run() {
     double lastTime = glfwGetTime();
     int nbFrames = 0;
 
-    _runner->Run();
-    _runner->Prepare();
+
+
+    while (v8::platform::PumpMessageLoop(platform.get(), _isolate)) continue;
 
     do {
 
         glClear(GL_COLOR_BUFFER_BIT);
-        _runner->Loop();
+
+        // Measure speed
+        double currentTime = glfwGetTime();
+        nbFrames++;
+        if (currentTime - lastTime >=
+            1.0) { // If last prinf() was more than 1sec ago
+            // printf and reset
+            printf("%f ms/frame\n", 1000.0 / double(nbFrames));
+            nbFrames = 0;
+            lastTime += 1.0;
+        }
+
+
+        printText2D("Hello V8 & GL", 10, 250, 30);
 
         // Swap buffers
         glfwSwapBuffers(_window);
@@ -108,10 +126,12 @@ void JSGLApplication::Run() {
     } // Check if the ESC key was pressed or the window was closed
     while (glfwGetKey(_window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
            glfwWindowShouldClose(_window) == 0);
+
+    glDeleteVertexArrays(1, &VertexArrayID);
+    cleanupText2D();
 }
 
-void JSGLApplication::Stop() {
-    cleanupText2D();
+void w8::Stop() {
     // Close OpenGL window and terminate GLFW
     glfwTerminate();
 }

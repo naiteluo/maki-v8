@@ -36,6 +36,8 @@ public:
     void Prepare();
 
     void Loop();
+
+    void StartWithContext();
 };
 
 

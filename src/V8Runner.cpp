@@ -4,7 +4,6 @@
 
 #include "libplatform/libplatform.h"
 #include <v8.h>
-#include <v8_demos/demo_3/demo_3.h>
 #include "V8Runner.h"
 
 #include "v8_demos/demo_1/demo_1.h"
@@ -43,7 +42,6 @@ void V8Runner::Run() {
     v8::HandleScope handle_scope(_isolate);
     run_demo1(_isolate, argv);
     run_demo2(_isolate, argv);
-    run_demo3(_isolate, argv);
 }
 
 void V8Runner::Dispose() {
@@ -56,7 +54,10 @@ void V8Runner::Prepare() {
 
 void V8Runner::Loop() {
     v8::HandleScope handle_scope(_isolate);
-    run_demo3(_isolate, argv);
+}
+
+void V8Runner::StartWithContext() {
+    v8::HandleScope handle_scope(_isolate);
 }
 
 

@@ -7,3 +7,6 @@
 [submodule "lib/glm"]
 	path = lib/glm
 	url = git@github.com:g-truc/glm.git
+[submodule "lib/libuv"]
+	path = lib/libuv
+	url = git@github.com:libuv/libuv.git

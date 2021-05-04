@@ -19,6 +19,7 @@ include_directories(
         lib/glm/
         lib/glew-2.2.0/include/
         lib/v8/include/
+        lib/libuv/include/
 )
 
 # add sub
@@ -26,3 +27,4 @@ add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(lib)
 add_subdirectory(lib/googletest)
+add_subdirectory(lib/libuv)
