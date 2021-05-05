@@ -13,6 +13,7 @@
 
 #include <common_from_ogl/shader.hpp>
 #include <common_from_ogl/text2D.hpp>
+#include <utils/FileReader.h>
 #include "uv.h"
 #include "Timer.h"
 
@@ -28,7 +29,10 @@ namespace w8 {
     double App::lastTime;
     int App::nbFrames;
 
-    int App::Initialize(char **argv) {
+    char **App::argv;
+
+    int App::Initialize(char **_argv) {
+        argv = _argv;
         // Initialise GLFW
         if (!glfwInit()) {
             fprintf(stderr, "Failed to initialize GLFW\n");
@@ -134,87 +138,32 @@ namespace w8 {
         // todo print more message. see example shell.cc in v8
     }
 
-    bool ExecuteJS(v8::Isolate *isolate) {
+    bool ExecuteJS(v8::Isolate *isolate, std::string filePath) {
         v8::HandleScope handle_scope(isolate);
         v8::TryCatch try_catch(isolate);
         v8::Local<v8::Context> context(isolate->GetCurrentContext());
-        const char source_str[] = R"(
-
-    log('b');
-    'hello' + 'v8';
-
-    // setTimeout Test
-
-    setTimeout(() => {
-        log('timeout 1 triggered.');
-        setTimeout(() => {
-            log('timeout 2 triggered.');
-            setTimeout(() => {
-                try {
-                    ee();
-                } catch(e) {
-                    log(e)
-                }
-                log('timeout 3 triggered.');
-            }, 1000);
-            setTimeout(() => {
-                log('timeout 4 triggered.');
-            }, 5000);
-        }, 2000);
-    }, 1000);
-
-    // render test
-
-    var y = 10
-
-    function renderFrame() {
-        glClear();
-        glText(
-            'V8! ' + Math.random() + '.',
-            10,
-            y,
-            30
-        );
-        y += 10;
-//        if (y > 470) return;
-        y = y > 470 ? 10 : y;
-        if (!glfwTick()) {
-            return;
-        }
-        // loop draw
-        setTimeout(renderFrame, 100);
-    }
-
-    renderFrame();
-
-
-    // base script
-    function main() {
-        runLoop();
-        do {
-            runLoop();
-        } while (isLoopAlive())
-        closeLoop();
-    }
-    main();
-    )";
-        v8::Local<v8::String> source = v8::String::NewFromUtf8Literal(isolate, source_str);
-        v8::Local<v8::Script> script;
-        if (!v8::Script::Compile(context, source).ToLocal(&script)) {
-            PrintException(isolate, &try_catch);
+        v8::Local<v8::String> source;
+        if (!FileReader::read(isolate, filePath).ToLocal(&source)) {
+            fprintf(stderr, "Error reading file: '%s'.\n", filePath.c_str());
             return false;
         } else {
-            v8::Local<v8::Value> result;
-            if (!script->Run(context).ToLocal(&result)) {
-                assert(try_catch.HasCaught());
+            v8::Local<v8::Script> script;
+            if (!v8::Script::Compile(context, source).ToLocal(&script)) {
                 PrintException(isolate, &try_catch);
                 return false;
             } else {
-                assert(!try_catch.HasCaught());
-                v8::String::Utf8Value utf8(isolate, result);
-                printf("%s\n", *utf8);
-                printf("ExecuteJS End\n");
-                return true;
+                v8::Local<v8::Value> result;
+                if (!script->Run(context).ToLocal(&result)) {
+                    assert(try_catch.HasCaught());
+                    PrintException(isolate, &try_catch);
+                    return false;
+                } else {
+                    assert(!try_catch.HasCaught());
+                    v8::String::Utf8Value utf8(isolate, result);
+                    printf("%s\n", *utf8);
+                    printf("ExecuteJS End\n");
+                    return true;
+                }
             }
         }
 
@@ -241,7 +190,13 @@ namespace w8 {
         // **important** Enter the context for compiling and running the hello world script.
         v8::Context::Scope context_scope(context);
         {
-            bool success = ExecuteJS(isolate);
+            std::string filePath;
+            if (argv[1] == NULL) {
+                filePath = "draw.js";
+            } else {
+                filePath = argv[1];
+            }
+            bool success = ExecuteJS(isolate, filePath);
             while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
             if (!success) {
                 printf("ExecuteJS Fail.\n");

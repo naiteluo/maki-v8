@@ -22,6 +22,7 @@ namespace w8 {
 
     public:
 
+        static char **argv;
         static double lastTime;
         static int nbFrames;
         static v8::Isolate *isolate;
