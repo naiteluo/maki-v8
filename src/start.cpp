@@ -5,13 +5,14 @@
 
 int main(int argc, char *argv[]) {
 
-    w8::Initialize(argv);
-    w8 *app = new w8();
+    w8::App::Initialize(argv);
+    w8::App *app = new w8::App();
+    w8::App::SetInstance(app);
     app->OpenWindow();
     app->Run();
     app->Stop();
     delete app;
-    V8Runner::Dispose();
+    w8::App::Dispose();
 
     return 0;
 }

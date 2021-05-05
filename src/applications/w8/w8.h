@@ -4,29 +4,63 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 #include <v8.h>
+#include "uv.h"
 
+#include "utils/common.h"
 
-class w8 {
-private:
-    v8::Isolate *_isolate;
-    v8::Isolate::CreateParams _create_params;
-    GLFWwindow *_window;
-public:
-    static std::unique_ptr<v8::Platform> platform;
+namespace w8 {
 
-    static int Initialize(char **argv);
+    const char *ToCString(const v8::String::Utf8Value &value);
 
-    static void Dispose();
+    void PrintException(v8::Isolate *isolate, v8::TryCatch *try_catch);
 
-    w8();
+    class App {
+    private:
+        v8::Isolate::CreateParams create_params;
+        GLuint VertexArrayID;
+        static App *instance;
 
-    ~w8();
+    public:
 
-    int OpenWindow();
+        static double lastTime;
+        static int nbFrames;
+        static v8::Isolate *isolate;
+        static GLFWwindow *window;
+        static std::unique_ptr<v8::Platform> platform;
+        static uv_loop_t *loop;
 
-    void Run();
+        static inline void SetInstance(App *_instance) {
+            instance = _instance;
+        };
 
-    void Stop();
-};
+        static inline App *GetInstance() {
+            return instance;
+        }
 
+        static int Initialize(char **argv);
+
+        static void Dispose();
+
+        static void JSFuncGLText(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+        static void JSFuncGLClear(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+        static void JSFuncGLFWTick(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+        static void LogCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+        App();
+
+        ~App();
+
+        int OpenWindow();
+
+        void Run();
+
+        void Stop();
+
+        v8::Local<v8::Context> CreateAppContext(v8::Isolate *isolate);
+
+    };
+}
 #endif //MAKI_W8_H
