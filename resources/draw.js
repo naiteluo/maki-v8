@@ -1,51 +1,34 @@
-console.log(123123);
+console.log(Math, Math.random, Math.random());
 
-print(version);
-print(inner);
-print(inner.version);
-print(JSON.stringify((inner)));
-print(inner.log);
-inner.log('inner.log');
-print(console.log);
-print(console);
-
-
-//
-// for (let key in console) {
-//     print(' ' + key + " " + console[key]);
-// }
-
-
-console1.log(123);
-console1.log('hello ' + `v${8}.`);
+console.log(123);
+console.log('hello ' + `v${8}.`);
 
 Promise.resolve().then(() => {
-    print('a');
+    console.log('a');
     Promise.resolve().then(() => {
-        print('d');
+        console.log('d');
     });
 });
 setTimeout(() => {
-    print('c');
+    console.log('c');
 }, 0);
 setTimeout(() => {
     Promise.resolve().then(() => {
-        print('g');
+        console.log('g');
     });
     setTimeout(() => {
-        print('f');
+        console.log('f');
     }, 0);
-    print('e');
+    console.log('e');
 }, 1);
 
 
 console.log('b');
 
 
-
-print('b');
+console.log('b');
 setTimeout(() => {
-    print('c');
+    console.log('c');
 }, 0);
 
 function mainLogic() {
@@ -93,10 +76,10 @@ function mainLogic() {
         setTimeout(renderFrame, 100);
     }
 
-    // renderFrame();
+    renderFrame();
 }
 
-// mainLogic();
+mainLogic();
 
 
 // base script

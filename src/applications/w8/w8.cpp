@@ -16,6 +16,7 @@
 #include <utils/FileReader.h>
 #include "uv.h"
 #include "Timer.h"
+#include "Inspector.h"
 
 namespace w8 {
 
@@ -187,7 +188,7 @@ namespace w8 {
             fprintf(stderr, "Error reading file: '%s'.\n", filePath.c_str());
             return false;
         } else {
-            printf("=========== ExecuteJS '$c' Start: =========\n", filePath.c_str());
+            printf("=========== ExecuteJS '$c' Start: %s =========\n", filePath.c_str());
             v8::Local<v8::Script> script;
             if (!v8::Script::Compile(context, source).ToLocal(&script)) {
                 PrintException(isolate, &try_catch);
@@ -197,13 +198,13 @@ namespace w8 {
                 if (!script->Run(context).ToLocal(&result)) {
                     assert(try_catch.HasCaught());
                     PrintException(isolate, &try_catch);
-                    printf("========*** ExecuteJS '$c' Fail. ***========\n", filePath.c_str());
+                    printf("========*** ExecuteJS '$c' Fail: %s ***========\n", filePath.c_str());
                     return false;
                 } else {
                     assert(!try_catch.HasCaught());
                     v8::String::Utf8Value utf8(isolate, result);
                     printf("Execute result: %s\n", *utf8);
-                    printf("=========== ExecuteJS '$c' End. ===========\n", filePath.c_str());
+                    printf("=========== ExecuteJS '$c' End: %s ===========\n", filePath.c_str());
                     return true;
                 }
             }
@@ -231,6 +232,8 @@ namespace w8 {
 
         // **important** Enter the context for compiling and running the hello world script.
         v8::Context::Scope context_scope(context);
+        // initialize inspector for current context
+        w8::inspector::InspectorClient inspector_client(context, true);
         {
             std::string filePath;
             if (argv[1] == NULL) {

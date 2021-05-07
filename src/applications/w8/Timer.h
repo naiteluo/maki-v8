@@ -30,6 +30,13 @@ namespace w8 {
 
             static void JSFuncCloseLoop(const v8::FunctionCallbackInfo<v8::Value> &args);
         };
+
+        class TestRawHeaderClass {
+        public:
+            static void Print(char *str) {
+                printf("TestRawHeaderClass: %s\n", str);
+            }
+        };
     }
 }
 
