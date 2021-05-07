@@ -48,7 +48,9 @@ namespace w8 {
 
         static void JSFuncGLFWTick(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-        static void LogCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+        static void JSFuncPrint(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+        static void JSFuncLog(const v8::FunctionCallbackInfo<v8::Value> &args);
 
         App();
 

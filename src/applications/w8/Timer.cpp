@@ -65,6 +65,7 @@ namespace w8 {
         void Timer::JSFuncRunLoop(const v8::FunctionCallbackInfo<v8::Value> &args) {
             v8::Isolate *isolate = args.GetIsolate();
             v8::HandleScope handle_scope(isolate);
+            isolate->PerformMicrotaskCheckpoint();
             int status = uv_run(App::loop, UV_RUN_DEFAULT);
             args.GetReturnValue().Set(v8::Integer::New(isolate, status));
         }

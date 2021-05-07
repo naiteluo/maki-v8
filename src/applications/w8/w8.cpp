@@ -76,9 +76,19 @@ namespace w8 {
         // Create a template for the global object where we set the
         // built-in global functions.
         v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
+        v8::Local<v8::String> version_str = v8::String::NewFromUtf8(isolate, "version 1.0").ToLocalChecked();
 
-        global->Set(isolate, "log",
-                    v8::FunctionTemplate::New(isolate, LogCallback));
+        // try to add a nested object template
+        v8::Local<v8::ObjectTemplate> inner = v8::ObjectTemplate::New(isolate);
+        v8::Local<v8::String> inner_version = v8::String::NewFromUtf8(isolate, "version 3.0").ToLocalChecked();
+        inner->Set(isolate, "log", v8::FunctionTemplate::New(isolate, App::JSFuncLog));
+        inner->Set(isolate, "version", inner_version);
+
+        global->Set(isolate, "inner", inner);
+
+        global->Set(isolate, "version", version_str);
+        global->Set(isolate, "print",
+                    v8::FunctionTemplate::New(isolate, JSFuncPrint));
         global->Set(isolate, "glClear",
                     v8::FunctionTemplate::New(isolate, App::JSFuncGLClear));
         global->Set(isolate, "glText",
@@ -88,10 +98,40 @@ namespace w8 {
 
         timer::Initialize(isolate, global);
 
-        return v8::Context::New(isolate, NULL, global);
+        v8::Local<v8::Context> context = v8::Context::New(isolate, NULL, global);
+
+
+        // switch to override default console
+        bool override_console = false;
+
+        if (override_console) {
+            // console is a build in object in global,
+            // which can will be delegated in v8 to places like inspector-related-module.
+            // you can override console in this way:
+            // add object instance named console to global
+            v8::Local<v8::ObjectTemplate> consoleObj = v8::ObjectTemplate::New(isolate,
+                                                                               v8::Local<v8::FunctionTemplate>());
+            consoleObj->Set(isolate, "log", v8::FunctionTemplate::New(isolate, JSFuncLog));
+            context->Global()->Set(context, v8::String::NewFromUtf8(isolate, "console").ToLocalChecked(),
+                                   consoleObj->NewInstance(context).ToLocalChecked()).FromJust();
+        }
+
+        return context;
     }
 
-    void App::LogCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    void App::JSFuncPrint(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        printf("JSFuncPrint ");
+        if (args.Length() < 1)
+            return;
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope handle_scope(isolate);
+        v8::Local<v8::Value> arg = args[0];
+        v8::String::Utf8Value value(isolate, arg);
+        printf("LOG: %s\n", *value);
+    }
+
+    void App::JSFuncLog(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        printf("JSFuncLog ");
         if (args.Length() < 1)
             return;
         v8::Isolate *isolate = args.GetIsolate();
@@ -147,6 +187,7 @@ namespace w8 {
             fprintf(stderr, "Error reading file: '%s'.\n", filePath.c_str());
             return false;
         } else {
+            printf("=========== ExecuteJS '$c' Start: =========\n", filePath.c_str());
             v8::Local<v8::Script> script;
             if (!v8::Script::Compile(context, source).ToLocal(&script)) {
                 PrintException(isolate, &try_catch);
@@ -156,12 +197,13 @@ namespace w8 {
                 if (!script->Run(context).ToLocal(&result)) {
                     assert(try_catch.HasCaught());
                     PrintException(isolate, &try_catch);
+                    printf("========*** ExecuteJS '$c' Fail. ***========\n", filePath.c_str());
                     return false;
                 } else {
                     assert(!try_catch.HasCaught());
                     v8::String::Utf8Value utf8(isolate, result);
-                    printf("%s\n", *utf8);
-                    printf("ExecuteJS End\n");
+                    printf("Execute result: %s\n", *utf8);
+                    printf("=========== ExecuteJS '$c' End. ===========\n", filePath.c_str());
                     return true;
                 }
             }
