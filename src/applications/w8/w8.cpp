@@ -105,18 +105,6 @@ namespace w8 {
         // switch to override default console
         bool override_console = false;
 
-        if (override_console) {
-            // console is a build in object in global,
-            // which can will be delegated in v8 to places like inspector-related-module.
-            // you can override console in this way:
-            // add object instance named console to global
-            v8::Local<v8::ObjectTemplate> consoleObj = v8::ObjectTemplate::New(isolate,
-                                                                               v8::Local<v8::FunctionTemplate>());
-            consoleObj->Set(isolate, "log", v8::FunctionTemplate::New(isolate, JSFuncLog));
-            context->Global()->Set(context, v8::String::NewFromUtf8(isolate, "console").ToLocalChecked(),
-                                   consoleObj->NewInstance(context).ToLocalChecked()).FromJust();
-        }
-
         return context;
     }
 
@@ -179,6 +167,90 @@ namespace w8 {
         // todo print more message. see example shell.cc in v8
     }
 
+    v8::MaybeLocal<v8::Module> LoadJSModule(v8::Isolate *isolate, std::string filePath) {
+        v8::EscapableHandleScope handle_scope(isolate);
+        v8::TryCatch try_catch(isolate);
+        v8::Local<v8::String> source_str;
+        if (!FileReader::read(isolate, filePath).ToLocal(&source_str)) {
+            fprintf(stderr, "Error reading file: '%s'.\n", filePath.c_str());
+            return handle_scope.Escape(v8::Local<v8::Module>());
+        }
+        v8::ScriptOrigin origin(
+                v8::String::NewFromUtf8(isolate, filePath.c_str()).ToLocalChecked(),
+                v8::Integer::New(isolate, 0),
+                v8::Integer::New(isolate, 0),
+                v8::True(isolate),
+                v8::Local<v8::Integer>(),
+                v8::Local<v8::Value>(),
+                v8::False(isolate),
+                v8::False(isolate),
+                v8::True(isolate)
+        );
+        printf("=========== ExecuteModule '$c' Compile: %s =========\n", filePath.c_str());
+
+        v8::Local<v8::Module> module;
+        v8::ScriptCompiler::Source source(source_str, origin);
+        if (!v8::ScriptCompiler::CompileModule(isolate, &source).ToLocal(&module)) {
+            PrintException(isolate, &try_catch);
+            return handle_scope.Escape(v8::Local<v8::Module>());
+        }
+
+
+        // AOT check modules
+        for (int i = 0; i < (*module)->GetModuleRequestsLength(); i++) {
+            v8::Local<String> specifier = (*module)->GetModuleRequest(i);
+            v8::String::Utf8Value s(isolate, specifier);
+            printf("%s\n", ToCString(s));
+        }
+
+        module->InstantiateModule(isolate->GetCurrentContext(),
+                                  [](v8::Local<v8::Context> context, v8::Local<v8::String> specifier,
+                                     v8::Local<v8::Module> referrer) {
+                                      v8::Isolate *isolate_inner = context->GetIsolate();
+                                      v8::String::Utf8Value specifier_utf8(isolate_inner, specifier);
+                                      v8::Local<v8::Module> module;
+                                      LoadJSModule(isolate_inner, ToCString(specifier_utf8)).ToLocal(&module);
+                                      return v8::MaybeLocal<v8::Module>(module);
+                                  }).Check();
+
+        return handle_scope.Escape(module);
+
+    }
+
+    bool ExecuteJSModule(v8::Isolate *isolate, std::string filePath) {
+        v8::HandleScope handle_scope(isolate);
+        v8::TryCatch try_catch(isolate);
+        v8::Local<v8::Context> context(isolate->GetCurrentContext());
+        v8::Local<v8::String> source_str;
+        if (!FileReader::read(isolate, filePath).ToLocal(&source_str)) {
+            fprintf(stderr, "Error reading file: '%s'.\n", filePath.c_str());
+            return false;
+        }
+        v8::Local<v8::Module> module;
+
+        if (!LoadJSModule(isolate, filePath).ToLocal(&module)) {
+            fprintf(stderr, "Error loading module: '%s'.\n", filePath.c_str());
+            return false;
+        } else {
+            v8::Context::Scope context_scope(context);
+            printf("=========== ExecuteModule '$c' Start: %s =========\n", filePath.c_str());
+            v8::Local<v8::Value> result;
+            if (!module->Evaluate(context).ToLocal(&result)) {
+                assert(try_catch.HasCaught());
+                PrintException(isolate, &try_catch);
+                printf("========*** ExecuteModule '$c' Fail: %s ***========\n", filePath.c_str());
+                return false;
+            } else {
+                assert(!try_catch.HasCaught());
+                v8::String::Utf8Value utf8(isolate, result);
+                printf("Execute result: %s\n", *utf8);
+                printf("=========== ExecuteModule '$c' End: %s ===========\n", filePath.c_str());
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool ExecuteJS(v8::Isolate *isolate, std::string filePath) {
         v8::HandleScope handle_scope(isolate);
         v8::TryCatch try_catch(isolate);
@@ -188,12 +260,13 @@ namespace w8 {
             fprintf(stderr, "Error reading file: '%s'.\n", filePath.c_str());
             return false;
         } else {
-            printf("=========== ExecuteJS '$c' Start: %s =========\n", filePath.c_str());
+            printf("=========== ExecuteJS '$c' Compile: %s =========\n", filePath.c_str());
             v8::Local<v8::Script> script;
             if (!v8::Script::Compile(context, source).ToLocal(&script)) {
                 PrintException(isolate, &try_catch);
                 return false;
             } else {
+                printf("=========== ExecuteJS '$c' Start: %s =========\n", filePath.c_str());
                 v8::Local<v8::Value> result;
                 if (!script->Run(context).ToLocal(&result)) {
                     assert(try_catch.HasCaught());
@@ -241,7 +314,8 @@ namespace w8 {
             } else {
                 filePath = argv[1];
             }
-            bool success = ExecuteJS(isolate, filePath);
+//            bool success = ExecuteJS(isolate, filePath);
+            bool success = ExecuteJSModule(isolate, filePath);
             while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
             if (!success) {
                 printf("ExecuteJS Fail.\n");
