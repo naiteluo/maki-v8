@@ -101,10 +101,6 @@ namespace w8 {
 
         v8::Local<v8::Context> context = v8::Context::New(isolate, NULL, global);
 
-
-        // switch to override default console
-        bool override_console = false;
-
         return context;
     }
 
