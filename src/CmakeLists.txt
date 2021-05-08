@@ -10,9 +10,12 @@ file(GLOB_RECURSE V8_DEMOS_SOURCES LIST_DIRECTORIES true v8_demos/*.h v8_demos/*
 file(GLOB_RECURSE UTILS_SOURCES LIST_DIRECTORIES true utils/*.h utils/*.cpp)
 file(GLOB_RECURSE COMMON_OGL_SOURCES LIST_DIRECTORIES true common_from_ogl/*.hpp common_from_ogl/*.cpp)
 file(GLOB_RECURSE APPLICATIONS_SOURCES LIST_DIRECTORIES true applications/*.h applications/*.cpp)
+file(GLOB_RECURSE W8_LIB_SOURCES LIST_DIRECTORIES true w8/*.h w8/*.cpp)
 
 # add sources as static library 
 add_library(${BINARY}_lib STATIC ${SOURCES})
+
+add_library(${BINARY}_lib_w8 STATIC ${W8_LIB_SOURCES})
 
 
 # link build output of v8 by directories
@@ -39,7 +42,7 @@ add_executable(
         ${V8_DEMOS_SOURCES}
         ${UTILS_SOURCES}
         ${COMMON_OGL_SOURCES}
-        ${APPLICATIONS_SOURCES}
+        ${W8_LIB_SOURCES}
 )
 
 
