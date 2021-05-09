@@ -25,6 +25,23 @@ namespace w8 {
             kModuleEmbedderDataIndex, kInspectorClientIndex
         };
 
+        inline std::string StringViewToUtf8Value(v8::Isolate *isolate, v8_inspector::StringView string_view) {
+            int length = static_cast<int>(string_view.length());
+            v8::Local<v8::String> string_view_str = string_view.is8Bit() ?
+                                                    v8::String::NewFromOneByte(isolate,
+                                                                               reinterpret_cast<const uint8_t *>(string_view.characters8()),
+                                                                               v8::NewStringType::kNormal,
+                                                                               length).ToLocalChecked()
+                                                                         : v8::String::NewFromTwoByte(isolate,
+                                                                                                      reinterpret_cast<const uint16_t *>(string_view.characters16()),
+                                                                                                      v8::NewStringType::kNormal,
+                                                                                                      length).ToLocalChecked();
+            v8::String::Utf8Value utf8(isolate, string_view_str);
+
+            std::string str = *utf8;
+            return str;
+        }
+
         class InspectorChannel final : public v8_inspector::V8Inspector::Channel {
         public:
             explicit InspectorChannel(v8::Local<v8::Context> context) {
@@ -87,18 +104,12 @@ namespace w8 {
                 // todo: length check
                 // DCHECK_LT(length, v8::String::kMaxLength);
                 // parse StringView to string
-                v8::Local<v8::String> message_str = message.is8Bit() ?
-                                                    v8::String::NewFromOneByte(isolate_,
-                                                                               reinterpret_cast<const uint8_t *>(message.characters8()),
-                                                                               v8::NewStringType::kNormal,
-                                                                               length).ToLocalChecked()
-                                                                     : v8::String::NewFromTwoByte(isolate_,
-                                                                                                  reinterpret_cast<const uint16_t *>(message.characters16()),
-                                                                                                  v8::NewStringType::kNormal,
-                                                                                                  length).ToLocalChecked();
-                v8::String::Utf8Value utf8(isolate_, message_str);
-                printf("Inspector Log: %s\n",
-                       *utf8
+                std::string message_str = StringViewToUtf8Value(isolate_, message);
+                std::string url_str = StringViewToUtf8Value(isolate_, url);
+                // better formatting for url
+                url_str = url_str.substr(url_str.find_last_of("/\\") + 1) + ":" + std::to_string(lineNumber) + ":" + std::to_string(columnNumber);
+                printf("Log %*s > %s\n",
+                       20, url_str.c_str(), message_str.c_str()
                 );
             }
 

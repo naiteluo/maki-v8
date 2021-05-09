@@ -20,6 +20,9 @@
 
 namespace w8 {
 
+    bool DO_DEBUG_LOGGING_LIFE_TIME = false;
+    bool DO_DEBUG_LOGGING = false;
+
     std::unique_ptr<v8::Platform> App::platform = NULL;
 
     GLFWwindow *App::window = NULL;
@@ -96,6 +99,8 @@ namespace w8 {
                     v8::FunctionTemplate::New(isolate, App::JSFuncGLText));
         global->Set(isolate, "glfwTick",
                     v8::FunctionTemplate::New(isolate, App::JSFuncGLFWTick));
+
+        global->Set(isolate, "__w8__bootstrap", v8::FunctionTemplate::New(isolate, App::JSFuncBootstrap));
 
         timer::Initialize(isolate, global);
 
@@ -182,7 +187,6 @@ namespace w8 {
                 v8::False(isolate),
                 v8::True(isolate)
         );
-        printf("=========== ExecuteModule '$c' Compile: %s =========\n", filePath.c_str());
 
         v8::Local<v8::Module> module;
         v8::ScriptCompiler::Source source(source_str, origin);
@@ -192,11 +196,10 @@ namespace w8 {
         }
 
 
-        // AOT check modules
+        // AOT check modules alias
         for (int i = 0; i < (*module)->GetModuleRequestsLength(); i++) {
             v8::Local<String> specifier = (*module)->GetModuleRequest(i);
             v8::String::Utf8Value s(isolate, specifier);
-            printf("%s\n", ToCString(s));
         }
 
         module->InstantiateModule(isolate->GetCurrentContext(),
@@ -209,76 +212,89 @@ namespace w8 {
                                       return v8::MaybeLocal<v8::Module>(module);
                                   }).Check();
 
-        return handle_scope.Escape(module);
+        // todo support async callback, or dynamic module resolving.
 
+        return handle_scope.Escape(module);
     }
 
-    bool ExecuteJSModule(v8::Isolate *isolate, std::string filePath) {
+    void LogExecution(const char *status, const char *file_path, const char *module_or_script) {
+        if (!DO_DEBUG_LOGGING_LIFE_TIME) {
+            return;
+        }
+        const char *tpl = "**************************************************** W8 Execution / %s / %s / %s \n";
+        if (strcmp(status, "Fail") == 0 || strcmp(status, "LoadFail") == 0 || strcmp(status, "CompileFail") == 0 ||
+            strcmp(status, "ModuleInitFail") == 0) {
+            fprintf(stderr, tpl, module_or_script, status, file_path);
+            return;
+        }
+        printf(tpl, module_or_script, status, file_path);
+    }
+
+    bool LoadAndExecuteFile(v8::Isolate *isolate, std::string filePath, bool isModule = true) {
+        // Setup scope and context bla bla
         v8::HandleScope handle_scope(isolate);
         v8::TryCatch try_catch(isolate);
         v8::Local<v8::Context> context(isolate->GetCurrentContext());
+        // read from file
         v8::Local<v8::String> source_str;
         if (!FileReader::read(isolate, filePath).ToLocal(&source_str)) {
-            fprintf(stderr, "Error reading file: '%s'.\n", filePath.c_str());
+            fprintf(stderr, "** Error reading file: '%s'. **\n", filePath.c_str());
             return false;
         }
-        v8::Local<v8::Module> module;
 
-        if (!LoadJSModule(isolate, filePath).ToLocal(&module)) {
-            fprintf(stderr, "Error loading module: '%s'.\n", filePath.c_str());
-            return false;
-        } else {
+        const char *file_path_c = filePath.c_str();
+        const char *module_or_script = isModule ? "Module" : "Script";
+
+        // read success, try to compile and execute
+        if (isModule) {
+            // js module Instantiate
+            v8::Local<v8::Module> module;
+            if (!LoadJSModule(isolate, filePath).ToLocal(&module)) {
+                LogExecution("ModuleInitFail", file_path_c, module_or_script);
+                return false;
+            }
             v8::Context::Scope context_scope(context);
-            printf("=========== ExecuteModule '$c' Start: %s =========\n", filePath.c_str());
             v8::Local<v8::Value> result;
+            LogExecution("Start", file_path_c, module_or_script);
             if (!module->Evaluate(context).ToLocal(&result)) {
                 assert(try_catch.HasCaught());
                 PrintException(isolate, &try_catch);
-                printf("========*** ExecuteModule '$c' Fail: %s ***========\n", filePath.c_str());
+                LogExecution("Fail", file_path_c, module_or_script);
                 return false;
             } else {
                 assert(!try_catch.HasCaught());
                 v8::String::Utf8Value utf8(isolate, result);
-                printf("Execute result: %s\n", *utf8);
-                printf("=========== ExecuteModule '$c' End: %s ===========\n", filePath.c_str());
+                if (DO_DEBUG_LOGGING) {
+                    printf("Execute result: %s\n", *utf8);
+                }
+                LogExecution("Success", file_path_c, module_or_script);
                 return true;
             }
-        }
-        return false;
-    }
-
-    bool ExecuteJS(v8::Isolate *isolate, std::string filePath) {
-        v8::HandleScope handle_scope(isolate);
-        v8::TryCatch try_catch(isolate);
-        v8::Local<v8::Context> context(isolate->GetCurrentContext());
-        v8::Local<v8::String> source;
-        if (!FileReader::read(isolate, filePath).ToLocal(&source)) {
-            fprintf(stderr, "Error reading file: '%s'.\n", filePath.c_str());
-            return false;
         } else {
-            printf("=========== ExecuteJS '$c' Compile: %s =========\n", filePath.c_str());
             v8::Local<v8::Script> script;
-            if (!v8::Script::Compile(context, source).ToLocal(&script)) {
+            if (!v8::Script::Compile(context, source_str).ToLocal(&script)) {
                 PrintException(isolate, &try_catch);
+                LogExecution("CompileFail", file_path_c, module_or_script);
                 return false;
             } else {
-                printf("=========== ExecuteJS '$c' Start: %s =========\n", filePath.c_str());
                 v8::Local<v8::Value> result;
+                LogExecution("Start", file_path_c, module_or_script);
                 if (!script->Run(context).ToLocal(&result)) {
                     assert(try_catch.HasCaught());
                     PrintException(isolate, &try_catch);
-                    printf("========*** ExecuteJS '$c' Fail: %s ***========\n", filePath.c_str());
+                    LogExecution("Fail", file_path_c, module_or_script);
                     return false;
                 } else {
                     assert(!try_catch.HasCaught());
                     v8::String::Utf8Value utf8(isolate, result);
-                    printf("Execute result: %s\n", *utf8);
-                    printf("=========== ExecuteJS '$c' End: %s ===========\n", filePath.c_str());
+                    if (DO_DEBUG_LOGGING) {
+                        printf("Execute result: %s\n", *utf8);
+                    }
+                    LogExecution("Success", file_path_c, module_or_script);
                     return true;
                 }
             }
         }
-
     }
 
     void App::Run() {
@@ -296,6 +312,8 @@ namespace w8 {
         lastTime = glfwGetTime();
         nbFrames = 0;
 
+        printf("\n\n");
+
         v8::HandleScope handle_scope(isolate);
         v8::Local<v8::Context> context = CreateAppContext(isolate);
 
@@ -306,16 +324,26 @@ namespace w8 {
         {
             std::string filePath;
             if (argv[1] == NULL) {
-                filePath = "draw.js";
+                filePath = "w8.mjs";
             } else {
                 filePath = argv[1];
             }
-//            bool success = ExecuteJS(isolate, filePath);
-            bool success = ExecuteJSModule(isolate, filePath);
-            while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
+            bool success = LoadAndExecuteFile(isolate, filePath, strstr(filePath.c_str(), ".mjs") != NULL);
+
             if (!success) {
                 printf("ExecuteJS Fail.\n");
             }
+
+            if (DO_DEBUG_LOGGING) {
+                printf("Event Looping Start:\n");
+            }
+            uv_run(loop, UV_RUN_DEFAULT);
+            while (uv_loop_alive(loop) != 0) {
+                while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
+                uv_run(loop, UV_RUN_DEFAULT);
+            }
+            uv_loop_close(loop);
+
         }
     }
 
@@ -362,6 +390,12 @@ namespace w8 {
             f = 1;
         }
         args.GetReturnValue().Set(v8::Integer::New(isolate, f));
+    }
+
+    void App::JSFuncBootstrap(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        v8::Isolate *isolate = args.GetIsolate();
+
+        LoadAndExecuteFile(isolate, "app.mjs");
     }
 
 }

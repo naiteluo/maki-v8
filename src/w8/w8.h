@@ -52,6 +52,8 @@ namespace w8 {
 
         static void JSFuncLog(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+        static void JSFuncBootstrap(const v8::FunctionCallbackInfo<v8::Value> &args);
+
         App();
 
         ~App();

@@ -40,7 +40,14 @@ namespace w8 {
             timerObj->handle->data = timerObj;
             timerObj->onTimeout.Reset(isolate, onTimeout);
             int r = uv_timer_start(timerObj->handle, OnTimeout, timeoutValue, 0);
-            args.GetReturnValue().Set(v8::Integer::New(isolate, r));
+            // success start
+            if (r == 0) {
+                // store timer object
+                args.GetReturnValue().Set(v8::Integer::New(isolate, timerObj->tid));
+            } else {
+                delete timerObj;
+            }
+
         }
 
         void Timer::OnTimeout(uv_timer_t *handle) {
@@ -56,10 +63,24 @@ namespace w8 {
             if (try_catch.HasCaught()) {
                 w8::PrintException(isolate, &try_catch);
             }
+            delete t;
         }
 
         void Timer::JSFuncClearTimeout(const v8::FunctionCallbackInfo<v8::Value> &args) {
-
+            v8::Isolate *isolate = w8::App::isolate;
+            v8::HandleScope handle_scope(isolate);
+            v8::Local<v8::Context> context = isolate->GetCurrentContext();
+            int r = args[0]->Int32Value(context).ToChecked();
+            // find timer
+            if (timer_pool.find(r) != timer_pool.end()) {
+                uv_timer_stop(timer_pool[r]->handle);
+                uv_handle_t *handle = (uv_handle_t *)timer_pool[r]->handle;
+                uv_close(handle, OnTimerClose);
+                args.GetReturnValue().Set(v8::Boolean::New(isolate, true));
+                return;
+            }
+            // do nothing
+            args.GetReturnValue().Set(v8::Boolean::New(isolate, false));
         }
 
         void Timer::JSFuncRunLoop(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -81,8 +102,22 @@ namespace w8 {
             v8::Isolate *isolate = args.GetIsolate();
             v8::HandleScope handle_scope(isolate);
             int ok = uv_loop_close(App::loop);
-            printf("Loop closed.\n");
             args.GetReturnValue().Set(v8::Integer::New(isolate, ok));
+        }
+
+        void Timer::OnTimerClose(uv_handle_t *handle) {
+            free(handle);
+        }
+
+        Timer::Timer() {
+            max_tid++;
+            tid = max_tid;
+            timer_pool[tid] = this;
+        }
+
+        Timer::~Timer() {
+            timer_pool.erase(tid);
+            free(handle);
         }
     }
 }
