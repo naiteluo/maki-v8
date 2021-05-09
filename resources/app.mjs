@@ -3,4 +3,3 @@ import {drawTextExample} from "./example/draw-text.js";
 
 // runClearTimeoutTest();
 drawTextExample();
-
