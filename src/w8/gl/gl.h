@@ -10,6 +10,18 @@
 namespace w8 {
     namespace gl {
 
+        void inline ADD_PROTO_METHOD(v8::Isolate *isolate,v8::Local<v8::FunctionTemplate> constructor_tpl, const char * name, v8::FunctionCallback callback) {
+            v8::Local<v8::String> func_name = v8::String::NewFromUtf8(isolate, name).ToLocalChecked();
+            v8::Local<v8::Signature> signature = v8::Signature::New(isolate, constructor_tpl);
+            v8::Local<v8::FunctionTemplate> proto_method_tpl = v8::FunctionTemplate::New(isolate,
+                                                                                         callback,
+                                                                                         v8::Local<v8::Value>(),
+                                                                                         signature);
+
+            proto_method_tpl->SetClassName(func_name);
+            constructor_tpl->PrototypeTemplate()->Set(func_name, proto_method_tpl);
+        }
+
         void Initialize(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> global);
 
         class Canvas {

@@ -16,41 +16,10 @@ namespace w8 {
             constructor_tpl->SetClassName(v8::String::NewFromUtf8(isolate, Canvas::ClassName()).ToLocalChecked());
             // use this count latter
             constructor_tpl->InstanceTemplate()->SetInternalFieldCount(1);
-            {
-                v8::Local<v8::String> func_name = v8::String::NewFromUtf8(isolate, "getContext").ToLocalChecked();
-                v8::Local<v8::Signature> signature = v8::Signature::New(isolate, constructor_tpl);
-                v8::Local<v8::FunctionTemplate> proto_method_tpl = v8::FunctionTemplate::New(isolate,
-                                                                                             GetContextCallback,
-                                                                                             v8::Local<v8::Value>(),
-                                                                                             signature);
 
-                proto_method_tpl->SetClassName(func_name);
-                constructor_tpl->PrototypeTemplate()->Set(func_name, proto_method_tpl);
-            }
-
-            {
-                v8::Local<v8::String> func_name = v8::String::NewFromUtf8(isolate, "sayHi").ToLocalChecked();
-                v8::Local<v8::Signature> signature = v8::Signature::New(isolate, constructor_tpl);
-                v8::Local<v8::FunctionTemplate> proto_method_tpl = v8::FunctionTemplate::New(isolate,
-                                                                                             SayHiCallback,
-                                                                                             v8::Local<v8::Value>(),
-                                                                                             signature);
-
-                proto_method_tpl->SetClassName(func_name);
-                constructor_tpl->PrototypeTemplate()->Set(func_name, proto_method_tpl);
-            }
-
-            {
-                v8::Local<v8::String> func_name = v8::String::NewFromUtf8(isolate, "setHi").ToLocalChecked();
-                v8::Local<v8::Signature> signature = v8::Signature::New(isolate, constructor_tpl);
-                v8::Local<v8::FunctionTemplate> proto_method_tpl = v8::FunctionTemplate::New(isolate,
-                                                                                             SetHiCallback,
-                                                                                             v8::Local<v8::Value>(),
-                                                                                             signature);
-
-                proto_method_tpl->SetClassName(func_name);
-                constructor_tpl->PrototypeTemplate()->Set(func_name, proto_method_tpl);
-            }
+            ADD_PROTO_METHOD(isolate, constructor_tpl, "getContext", GetContextCallback);
+            ADD_PROTO_METHOD(isolate, constructor_tpl, "sayHi", SayHiCallback);
+            ADD_PROTO_METHOD(isolate, constructor_tpl, "setHi", SetHiCallback);
 
             global->Set(v8::String::NewFromUtf8(isolate, "Canvas").ToLocalChecked(), constructor_tpl);
         }
