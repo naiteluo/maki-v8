@@ -2,8 +2,8 @@
 // Created by Jiawei Tan on 2021/5/5.
 //
 
-#ifndef MAKI_TIMER_H
-#define MAKI_TIMER_H
+#ifndef MAKI_W8_TIMER_H
+#define MAKI_W8_TIMER_H
 
 #include "v8.h"
 #include "uv.h"
@@ -51,4 +51,4 @@ namespace w8 {
     }
 }
 
-#endif //MAKI_TIMER_H
+#endif //MAKI_W8_TIMER_H

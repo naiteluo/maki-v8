@@ -2,8 +2,8 @@
 // Created by Jiawei Tan on 2021/5/7.
 //
 
-#ifndef MAKI_INSPECTOR_H
-#define MAKI_INSPECTOR_H
+#ifndef MAKI_W8_INSPECTOR_H
+#define MAKI_W8_INSPECTOR_H
 
 #include "libplatform/libplatform.h"
 #include "v8.h"
@@ -129,4 +129,4 @@ namespace w8 {
 }
 
 
-#endif //MAKI_INSPECTOR_H
+#endif //MAKI_W8_INSPECTOR_H

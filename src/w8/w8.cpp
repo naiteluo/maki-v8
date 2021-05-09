@@ -4,7 +4,7 @@
 
 // Include GLM
 #include <cstdio>
-#include <glm/glm.hpp>
+//#include <glm/glm.hpp>
 #include <stdio.h>
 #include "libplatform/libplatform.h"
 #include <v8.h>
@@ -15,8 +15,8 @@
 #include <common_from_ogl/text2D.hpp>
 #include <utils/FileReader.h>
 #include "uv.h"
-#include "Timer.h"
-#include "Inspector.h"
+#include "timer.h"
+#include "inspector.h"
 
 namespace w8 {
 

@@ -2,7 +2,7 @@
 // Created by Jiawei Tan on 2021/5/5.
 //
 
-#include "Timer.h"
+#include "timer.h"
 #include "w8.h"
 
 namespace w8 {
