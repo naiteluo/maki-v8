@@ -17,6 +17,7 @@
 #include "uv.h"
 #include "timer.h"
 #include "inspector.h"
+#include "gl/gl.h"
 
 namespace w8 {
 
@@ -103,6 +104,7 @@ namespace w8 {
         global->Set(isolate, "__w8__bootstrap", v8::FunctionTemplate::New(isolate, App::JSFuncBootstrap));
 
         timer::Initialize(isolate, global);
+        gl::Initialize(isolate, global);
 
         v8::Local<v8::Context> context = v8::Context::New(isolate, NULL, global);
 
