@@ -1,8 +1,12 @@
-export function drawTextExample() {
+export function drawTextExample(cb) {
 
     let y = 10;
+    let counter = 0;
 
     function renderFrame() {
+        if (cb) {
+            cb(counter);
+        }
         glClear();
         glText(
             'V8 + gl ' + Math.random() + '.',
@@ -12,6 +16,7 @@ export function drawTextExample() {
         );
         y += 10;
         y = y > 470 ? 10 : y;
+        counter++;
         if (!glfwTick()) {
             return;
         }

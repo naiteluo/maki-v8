@@ -107,10 +107,22 @@ namespace w8 {
                 std::string message_str = StringViewToUtf8Value(isolate_, message);
                 std::string url_str = StringViewToUtf8Value(isolate_, url);
                 // better formatting for url
-                url_str = url_str.substr(url_str.find_last_of("/\\") + 1) + ":" + std::to_string(lineNumber) + ":" + std::to_string(columnNumber);
-                printf("Log %*s > %s\n",
-                       20, url_str.c_str(), message_str.c_str()
-                );
+
+                char *tpl = "Log %*s > %s\n";
+                url_str = url_str.substr(url_str.find_last_of("/\\") + 1) + ":" + std::to_string(lineNumber) + ":" +
+                          std::to_string(columnNumber);
+                if (level == v8::Isolate::MessageErrorLevel::kMessageError ||
+                    level == v8::Isolate::MessageErrorLevel::kMessageWarning) {
+                    fprintf(stderr, tpl,
+                            20, url_str.c_str(), message_str.c_str()
+                    );
+                } else {
+                    fprintf(stdout, tpl,
+                           20, url_str.c_str(), message_str.c_str()
+                    );
+                }
+
+
             }
 
         private:

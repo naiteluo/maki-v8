@@ -14,6 +14,8 @@ namespace w8 {
 
     void PrintException(v8::Isolate *isolate, v8::TryCatch *try_catch);
 
+    void PrintException(v8::Isolate *isolate, v8::Local<v8::Value> exception);
+
     class App {
     private:
         v8::Isolate::CreateParams create_params;

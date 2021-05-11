@@ -164,8 +164,16 @@ namespace w8 {
 
     void PrintException(v8::Isolate *isolate, v8::TryCatch *try_catch) {
         v8::HandleScope handle_scope(isolate);
-        v8::String::Utf8Value exception(isolate, try_catch->Exception());
-        const char *exception_string = ToCString(exception);
+        v8::String::Utf8Value exception_utf8(isolate, try_catch->Exception());
+        const char *exception_string = ToCString(exception_utf8);
+        fprintf(stderr, "Exception: %s\n", exception_string);
+        // todo print more message. see example shell.cc in v8
+    }
+
+    void PrintException(v8::Isolate *isolate, v8::Local<v8::Value> exception) {
+        v8::HandleScope handle_scope(isolate);
+        v8::String::Utf8Value exception_utf8(isolate, exception);
+        const char *exception_string = ToCString(exception_utf8);
         fprintf(stderr, "Exception: %s\n", exception_string);
         // todo print more message. see example shell.cc in v8
     }
@@ -193,6 +201,7 @@ namespace w8 {
         v8::Local<v8::Module> module;
         v8::ScriptCompiler::Source source(source_str, origin);
         if (!v8::ScriptCompiler::CompileModule(isolate, &source).ToLocal(&module)) {
+            assert(try_catch.HasCaught());
             PrintException(isolate, &try_catch);
             return handle_scope.Escape(v8::Local<v8::Module>());
         }
@@ -204,6 +213,7 @@ namespace w8 {
             v8::String::Utf8Value s(isolate, specifier);
         }
 
+
         module->InstantiateModule(isolate->GetCurrentContext(),
                                   [](v8::Local<v8::Context> context, v8::Local<v8::String> specifier,
                                      v8::Local<v8::Module> referrer) {
@@ -213,7 +223,6 @@ namespace w8 {
                                       LoadJSModule(isolate_inner, ToCString(specifier_utf8)).ToLocal(&module);
                                       return v8::MaybeLocal<v8::Module>(module);
                                   }).Check();
-
         // todo support async callback, or dynamic module resolving.
 
         return handle_scope.Escape(module);
@@ -265,6 +274,12 @@ namespace w8 {
                 return false;
             } else {
                 assert(!try_catch.HasCaught());
+                // get module evaluate exception;
+                if (module->GetStatus() == v8::Module::Status::kErrored) {
+                    if (!module->GetException().IsEmpty()) {
+                        PrintException(isolate, module->GetException());
+                    }
+                }
                 v8::String::Utf8Value utf8(isolate, result);
                 if (DO_DEBUG_LOGGING) {
                     printf("Execute result: %s\n", *utf8);
