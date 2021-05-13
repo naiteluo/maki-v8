@@ -10,3 +10,6 @@
 [submodule "lib/libuv"]
 	path = lib/libuv
 	url = git@github.com:libuv/libuv.git
+[submodule "lib/websocketpp"]
+	path = lib/websocketpp
+	url = git@github.com:zaphoyd/websocketpp.git

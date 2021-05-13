@@ -56,6 +56,12 @@ namespace w8 {
 
         static void JSFuncBootstrap(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+        static void JSFuncSleep(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+        static void JSFuncBazinga(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+        static void OnUVPrepareCallback(uv_prepare_t *handle);
+
         App();
 
         ~App();

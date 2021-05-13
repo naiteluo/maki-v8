@@ -21,8 +21,8 @@
 
 namespace w8 {
 
-    bool DO_DEBUG_LOGGING_LIFE_TIME = false;
-    bool DO_DEBUG_LOGGING = false;
+    bool DO_DEBUG_LOGGING_LIFE_TIME = true;
+    bool DO_DEBUG_LOGGING = true;
 
     std::unique_ptr<v8::Platform> App::platform = NULL;
 
@@ -102,6 +102,8 @@ namespace w8 {
                     v8::FunctionTemplate::New(isolate, App::JSFuncGLFWTick));
 
         global->Set(isolate, "__w8__bootstrap", v8::FunctionTemplate::New(isolate, App::JSFuncBootstrap));
+        global->Set(isolate, "__w8__sleep", v8::FunctionTemplate::New(isolate, App::JSFuncSleep));
+        global->Set(isolate, "__w8__bazinga", v8::FunctionTemplate::New(isolate, App::JSFuncBazinga));
 
         timer::Initialize(isolate, global);
         gl::Initialize(isolate, global);
@@ -213,7 +215,6 @@ namespace w8 {
             v8::String::Utf8Value s(isolate, specifier);
         }
 
-
         module->InstantiateModule(isolate->GetCurrentContext(),
                                   [](v8::Local<v8::Context> context, v8::Local<v8::String> specifier,
                                      v8::Local<v8::Module> referrer) {
@@ -239,6 +240,46 @@ namespace w8 {
             return;
         }
         printf(tpl, module_or_script, status, file_path);
+    }
+
+    /**
+     * modules are evaluated only once
+     * re-evaluate evaluated module won't evaluate again
+     * @param isolate
+     * @param module
+     * @param filePath
+     * @return
+     */
+    v8::Local<v8::Value> ExecuteModule(v8::Isolate *isolate, v8::Local<v8::Module> module, std::string filePath) {
+        // Setup scope and context bla bla
+        v8::EscapableHandleScope handle_scope(isolate);
+        v8::TryCatch try_catch(isolate);
+        v8::Local<v8::Context> context(isolate->GetCurrentContext());
+        v8::Context::Scope context_scope(context);
+        v8::Local<v8::Value> result;
+        const char *file_path_c = filePath.c_str();
+        const char *module_or_script = "module";
+        LogExecution("Start", file_path_c, module_or_script);
+        if (!module->Evaluate(context).ToLocal(&result)) {
+            assert(try_catch.HasCaught());
+            PrintException(isolate, &try_catch);
+            LogExecution("Fail", file_path_c, module_or_script);
+            return handle_scope.Escape(v8::Local<v8::Value>());
+        } else {
+            assert(!try_catch.HasCaught());
+            // get module evaluate exception;
+            if (module->GetStatus() == v8::Module::Status::kErrored) {
+                if (!module->GetException().IsEmpty()) {
+                    PrintException(isolate, module->GetException());
+                }
+            }
+            v8::String::Utf8Value utf8(isolate, result);
+            if (DO_DEBUG_LOGGING) {
+                printf("Execute result: %s\n", *utf8);
+            }
+            LogExecution("Success", file_path_c, module_or_script);
+            return handle_scope.Escape(result);
+        }
     }
 
     bool LoadAndExecuteFile(v8::Isolate *isolate, std::string filePath, bool isModule = true) {
@@ -331,37 +372,69 @@ namespace w8 {
 
         printf("\n\n");
 
+
+
         v8::HandleScope handle_scope(isolate);
+
+        isolate->SetFailedAccessCheckCallbackFunction([](v8::Local<v8::Object> target,
+                                                         v8::AccessType type,
+                                                         v8::Local<v8::Value> data) {
+            printf("failsssss");
+        });
+
+        isolate->SetFatalErrorHandler([](const char* location, const char* message) {
+            printf("location: %c\n", location);
+            printf("message %c\n", message);
+        });
+
         v8::Local<v8::Context> context = CreateAppContext(isolate);
 
         // **important** Enter the context for compiling and running the hello world script.
         v8::Context::Scope context_scope(context);
         // initialize inspector for current context
         w8::inspector::InspectorClient inspector_client(context, true);
-        {
-            std::string filePath;
-            if (argv[1] == NULL) {
-                filePath = "w8.mjs";
-            } else {
-                filePath = argv[1];
-            }
-            bool success = LoadAndExecuteFile(isolate, filePath, strstr(filePath.c_str(), ".mjs") != NULL);
+        uv_loop_set_data(loop, &inspector_client);
 
-            if (!success) {
-                printf("ExecuteJS Fail.\n");
-            }
+        context->Global()->GetIdentityHash();
 
-            if (DO_DEBUG_LOGGING) {
-                printf("Event Looping Start:\n");
-            }
-            uv_run(loop, UV_RUN_DEFAULT);
-            while (uv_loop_alive(loop) != 0) {
-                while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
-                uv_run(loop, UV_RUN_DEFAULT);
-            }
-            uv_loop_close(loop);
+        inspector_client.GetWSChannel().wait_for_connection();
 
+        uv_prepare_t *prepare_handler = (uv_prepare_t *) calloc(1, sizeof(uv_prepare_t));
+        uv_prepare_init(loop, prepare_handler);
+        prepare_handler->data = &inspector_client;
+
+        uv_prepare_start(prepare_handler, OnUVPrepareCallback);
+
+        std::string filePath;
+        if (argv[1] == NULL) {
+            filePath = "w8.mjs";
+        } else {
+            filePath = argv[1];
         }
+
+        v8::Local<v8::Module> module;
+        if (!LoadJSModule(isolate, filePath).ToLocal(&module)) {
+            LogExecution("ModuleInitFail", filePath.c_str(), "module");
+        }
+
+        v8::Local<v8::Value> result;
+
+        result = ExecuteModule(isolate, module, filePath);
+
+        if (result.IsEmpty()) {
+            printf("ExecuteJS Fail.\n");
+        }
+
+        if (DO_DEBUG_LOGGING) {
+            printf("Event Looping Start:\n");
+        }
+//            while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
+        uv_run(loop, UV_RUN_DEFAULT);
+        while (uv_loop_alive(loop) != 0) {
+            while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
+            uv_run(loop, UV_RUN_DEFAULT);
+        }
+        uv_loop_close(loop);
     }
 
     void App::Stop() {
@@ -413,6 +486,21 @@ namespace w8 {
         v8::Isolate *isolate = args.GetIsolate();
 
         LoadAndExecuteFile(isolate, "app.mjs");
+    }
+
+    void App::JSFuncSleep(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        usleep(1000000);
+    }
+
+    void App::JSFuncBazinga(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        inspector::InspectorClient *client = (inspector::InspectorClient *) loop->data;
+        (*client).GetWSChannel().poll();
+    }
+
+    void App::OnUVPrepareCallback(uv_prepare_t *handle) {
+        inspector::InspectorClient *client = (inspector::InspectorClient *) handle->data;
+//        printf("%i\n", client->paused);
+//        (*client).GetWSChannel().poll();
     }
 
 }

@@ -56,6 +56,14 @@ Makise Kurisu, a v8 embed opengl renderer.
 
    - [get v8 srouce code](https://v8.dev/docs/source-code)
    - [build for embed](https://v8.dev/docs/embed#advanced-guide)
+   
+4. Get `Boost`
+
+We use `websocketpp` which alias `Boost::asio` to handle ws connection between chrome inspector, and the runtime. Install boost as local library deps.
+
+```bash
+brew install boost
+```
 
 ## IDE setups
 
