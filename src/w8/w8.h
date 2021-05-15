@@ -5,6 +5,7 @@
 #include <memory>
 #include <v8.h>
 #include "uv.h"
+#include "options.h"
 
 #include "utils/common.h"
 
@@ -24,13 +25,15 @@ namespace w8 {
 
     public:
 
-        static char **argv;
         static double lastTime;
         static int nbFrames;
         static v8::Isolate *isolate;
         static GLFWwindow *window;
         static std::unique_ptr<v8::Platform> platform;
         static uv_loop_t *loop;
+        static uv_prepare_t *prepare_handle;
+
+        static Options options;
 
         static inline void SetInstance(App *_instance) {
             instance = _instance;
@@ -40,7 +43,7 @@ namespace w8 {
             return instance;
         }
 
-        static int Initialize(char **argv);
+        static int Initialize(int argc, char *argv[]);
 
         static void Dispose();
 
@@ -58,9 +61,11 @@ namespace w8 {
 
         static void JSFuncSleep(const v8::FunctionCallbackInfo<v8::Value> &args);
 
-        static void JSFuncBazinga(const v8::FunctionCallbackInfo<v8::Value> &args);
+        static void JSFuncPoll(const v8::FunctionCallbackInfo<v8::Value> &args);
 
         static void OnUVPrepareCallback(uv_prepare_t *handle);
+
+        static bool isLoopContinue();
 
         App();
 

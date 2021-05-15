@@ -31,14 +31,17 @@ namespace w8 {
     App *App::instance = NULL;
     v8::Isolate *App::isolate = NULL;
     uv_loop_t *App::loop = uv_default_loop();
+    uv_prepare_t *App::prepare_handle;
+
+    Options App::options;
 
     double App::lastTime;
     int App::nbFrames;
 
-    char **App::argv;
+    int App::Initialize(int _argc, char **_argv) {
+        options.Parse(_argc, _argv);
+        options.Print();
 
-    int App::Initialize(char **_argv) {
-        argv = _argv;
         // Initialise GLFW
         if (!glfwInit()) {
             fprintf(stderr, "Failed to initialize GLFW\n");
@@ -53,8 +56,8 @@ namespace w8 {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         // Initialize V8.
-        v8::V8::InitializeICUDefaultLocation(argv[0]);
-        v8::V8::InitializeExternalStartupData(argv[0]);
+        v8::V8::InitializeICUDefaultLocation(options.base_path.get());
+        v8::V8::InitializeExternalStartupData(options.base_path.get());
         platform = v8::platform::NewDefaultPlatform();
         v8::V8::InitializePlatform(platform.get());
         v8::V8::Initialize();
@@ -104,7 +107,7 @@ namespace w8 {
 
         global->Set(isolate, "__w8__bootstrap", v8::FunctionTemplate::New(isolate, App::JSFuncBootstrap));
         global->Set(isolate, "__w8__sleep", v8::FunctionTemplate::New(isolate, App::JSFuncSleep));
-        global->Set(isolate, "__w8__poll", v8::FunctionTemplate::New(isolate, App::JSFuncBazinga));
+        global->Set(isolate, "__w8__poll", v8::FunctionTemplate::New(isolate, App::JSFuncPoll));
 
         timer::Initialize(isolate, global);
         gl::Initialize(isolate, global);
@@ -383,41 +386,26 @@ namespace w8 {
             // **important** Enter the context for compiling and running the hello world script.
             v8::Context::Scope context_scope(context);
             {
-                // initialize inspector for current context
                 inspector::InspectorClient inspector_client(context, true);
-                uv_loop_set_data(loop, &inspector_client);
-
-                inspector_client.GetWSChannel().wait_for_connection();
-                context->SetAlignedPointerInEmbedderData(1, &inspector_client);
-
-                inspector_client.GetWSChannel().poll();
-
-                uv_prepare_t *prepare_handler = (uv_prepare_t *) calloc(1, sizeof(uv_prepare_t));
-                uv_prepare_init(loop, prepare_handler);
-                prepare_handler->data = &inspector_client;
-
-                uv_prepare_start(prepare_handler, OnUVPrepareCallback);
-
-                std::string filePath;
-                if (argv[1] == NULL) {
-                    filePath = "w8.mjs";
-                } else {
-                    filePath = argv[1];
+                // initialize inspector for current context
+                if (options.inspector_enabled) {
+                    uv_loop_set_data(loop, &inspector_client);
+                    inspector_client.GetWSChannel().wait_for_connection();
+                    context->SetAlignedPointerInEmbedderData(1, &inspector_client);
+                    inspector_client.GetWSChannel().poll();
+                    prepare_handle = (uv_prepare_t *) calloc(1, sizeof(uv_prepare_t));
+                    uv_prepare_init(loop, prepare_handle);
+                    prepare_handle->data = &inspector_client;
+                    uv_prepare_start(prepare_handle, OnUVPrepareCallback);
                 }
 
-                v8::ScriptOrigin origin(
-                        isolate, v8::String::NewFromUtf8(isolate, filePath.c_str()).ToLocalChecked()
-                );
-                v8::Local<v8::String> source = FileReader::read(isolate, filePath).ToLocalChecked();
-
+                std::string filePath(options.entry.get());
                 v8::Local<v8::Module> module;
                 if (!LoadJSModule(isolate, filePath).ToLocal(&module)) {
                     LogExecution("ModuleInitFail", filePath.c_str(), "module");
                 }
 
-                inspector_client.GetWSChannel().poll();
                 v8::Local<v8::Value> result;
-
 
                 result = ExecuteModule(isolate, module, filePath);
 
@@ -428,18 +416,17 @@ namespace w8 {
                 if (DO_DEBUG_LOGGING) {
                     printf("Event Looping Start:\n");
                 }
+
+                // todo: macro and micro task handling need reviewing
                 while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
                 uv_run(loop, UV_RUN_DEFAULT);
-                while (uv_loop_alive(loop) != 0) {
+                while (isLoopContinue()) {
                     while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
                     uv_run(loop, UV_RUN_DEFAULT);
                 }
                 uv_loop_close(loop);
             }
-
         }
-
-
     }
 
     void App::Stop() {
@@ -497,7 +484,7 @@ namespace w8 {
         usleep(1000000);
     }
 
-    void App::JSFuncBazinga(const v8::FunctionCallbackInfo<v8::Value> &args) {
+    void App::JSFuncPoll(const v8::FunctionCallbackInfo<v8::Value> &args) {
         inspector::InspectorClient *client = (inspector::InspectorClient *) loop->data;
         (*client).GetWSChannel().poll();
     }
@@ -505,6 +492,18 @@ namespace w8 {
     void App::OnUVPrepareCallback(uv_prepare_t *handle) {
         inspector::InspectorClient *client = (inspector::InspectorClient *) handle->data;
         (*client).GetWSChannel().poll();
+        if (!isLoopContinue()) {
+            // remove prepare handle
+            uv_close((uv_handle_t *) prepare_handle, [](uv_handle_t *handle) {
+                free(handle);
+            });
+        }
+    }
+
+    bool App::isLoopContinue() {
+        bool isLoopAlive = uv_loop_alive(loop);
+        bool hasUnhandledTimer = timer::Timer::timer_pool.size() > 0;
+        return (isLoopAlive && hasUnhandledTimer);
     }
 
 }

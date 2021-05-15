@@ -52,7 +52,6 @@ namespace w8 {
         }
 
         void WebSocketService::on_open(websocketpp::connection_hdl hdl) {
-            printf("WebSocketService::on_open");
             assert(connections_.size() == 0);
             connections_.emplace(hdl, inspector::InspectorChannel(*this, hdl));
             inspector_client_->ConnectWithChannel(&connections_.find(hdl)->second);
