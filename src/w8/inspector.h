@@ -178,17 +178,22 @@ namespace w8 {
                 return *this->session_;
             }
 
+            /**
+             * start to pull message when external-inspector tell us to paused.
+             * @param contextGroupId
+             */
             void runMessageLoopOnPause(int contextGroupId) override {
-                printf("runMessageLoopOnPause\n");
                 paused = true;
                 while(paused) {
                     this->websocket_service_.run_one();
                 }
             }
 
+            /**
+             * resume from pausing.
+             */
             void quitMessageLoopOnPause() override {
-                printf("quitMessageLoopOnPause\n");
-                paused = true;
+                paused = false;
             }
 
             WebSocketService & GetWSChannel() {

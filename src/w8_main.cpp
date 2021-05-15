@@ -1,6 +1,5 @@
 #include <string>
 
-#include "V8Runner.h"
 #include "w8/w8.h"
 
 int main(int argc, char *argv[]) {

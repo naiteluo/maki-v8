@@ -14,6 +14,7 @@
 #include <common_from_ogl/shader.hpp>
 #include <common_from_ogl/text2D.hpp>
 #include <utils/FileReader.h>
+#include "v8-inspector.h"
 #include "uv.h"
 #include "timer.h"
 #include "inspector.h"
@@ -103,7 +104,7 @@ namespace w8 {
 
         global->Set(isolate, "__w8__bootstrap", v8::FunctionTemplate::New(isolate, App::JSFuncBootstrap));
         global->Set(isolate, "__w8__sleep", v8::FunctionTemplate::New(isolate, App::JSFuncSleep));
-        global->Set(isolate, "__w8__bazinga", v8::FunctionTemplate::New(isolate, App::JSFuncBazinga));
+        global->Set(isolate, "__w8__poll", v8::FunctionTemplate::New(isolate, App::JSFuncBazinga));
 
         timer::Initialize(isolate, global);
         gl::Initialize(isolate, global);
@@ -286,7 +287,7 @@ namespace w8 {
         // Setup scope and context bla bla
         v8::HandleScope handle_scope(isolate);
         v8::TryCatch try_catch(isolate);
-        v8::Local<v8::Context> context(isolate->GetCurrentContext());
+        v8::Local<v8::Context> context = isolate->GetCurrentContext();
         // read from file
         v8::Local<v8::String> source_str;
         if (!FileReader::read(isolate, filePath).ToLocal(&source_str)) {
@@ -372,69 +373,73 @@ namespace w8 {
 
         printf("\n\n");
 
-
-
+        // **important** Missing it will cause ptr issue when setting breaking.
+        v8::Isolate::Scope isolate_scope(isolate);
         v8::HandleScope handle_scope(isolate);
+        {
 
-        isolate->SetFailedAccessCheckCallbackFunction([](v8::Local<v8::Object> target,
-                                                         v8::AccessType type,
-                                                         v8::Local<v8::Value> data) {
-            printf("failsssss");
-        });
+            v8::Local<v8::Context> context = CreateAppContext(isolate);
 
-        isolate->SetFatalErrorHandler([](const char* location, const char* message) {
-            printf("location: %c\n", location);
-            printf("message %c\n", message);
-        });
+            // **important** Enter the context for compiling and running the hello world script.
+            v8::Context::Scope context_scope(context);
+            {
+                // initialize inspector for current context
+                inspector::InspectorClient inspector_client(context, true);
+                uv_loop_set_data(loop, &inspector_client);
 
-        v8::Local<v8::Context> context = CreateAppContext(isolate);
+                inspector_client.GetWSChannel().wait_for_connection();
+                context->SetAlignedPointerInEmbedderData(1, &inspector_client);
 
-        // **important** Enter the context for compiling and running the hello world script.
-        v8::Context::Scope context_scope(context);
-        // initialize inspector for current context
-        w8::inspector::InspectorClient inspector_client(context, true);
-        uv_loop_set_data(loop, &inspector_client);
+                inspector_client.GetWSChannel().poll();
 
-        context->Global()->GetIdentityHash();
+                uv_prepare_t *prepare_handler = (uv_prepare_t *) calloc(1, sizeof(uv_prepare_t));
+                uv_prepare_init(loop, prepare_handler);
+                prepare_handler->data = &inspector_client;
 
-        inspector_client.GetWSChannel().wait_for_connection();
+                uv_prepare_start(prepare_handler, OnUVPrepareCallback);
 
-        uv_prepare_t *prepare_handler = (uv_prepare_t *) calloc(1, sizeof(uv_prepare_t));
-        uv_prepare_init(loop, prepare_handler);
-        prepare_handler->data = &inspector_client;
+                std::string filePath;
+                if (argv[1] == NULL) {
+                    filePath = "w8.mjs";
+                } else {
+                    filePath = argv[1];
+                }
 
-        uv_prepare_start(prepare_handler, OnUVPrepareCallback);
+                v8::ScriptOrigin origin(
+                        isolate, v8::String::NewFromUtf8(isolate, filePath.c_str()).ToLocalChecked()
+                );
+                v8::Local<v8::String> source = FileReader::read(isolate, filePath).ToLocalChecked();
 
-        std::string filePath;
-        if (argv[1] == NULL) {
-            filePath = "w8.mjs";
-        } else {
-            filePath = argv[1];
+                v8::Local<v8::Module> module;
+                if (!LoadJSModule(isolate, filePath).ToLocal(&module)) {
+                    LogExecution("ModuleInitFail", filePath.c_str(), "module");
+                }
+
+                inspector_client.GetWSChannel().poll();
+                v8::Local<v8::Value> result;
+
+
+                result = ExecuteModule(isolate, module, filePath);
+
+                if (result.IsEmpty()) {
+                    printf("ExecuteJS Fail.\n");
+                }
+
+                if (DO_DEBUG_LOGGING) {
+                    printf("Event Looping Start:\n");
+                }
+                while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
+                uv_run(loop, UV_RUN_DEFAULT);
+                while (uv_loop_alive(loop) != 0) {
+                    while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
+                    uv_run(loop, UV_RUN_DEFAULT);
+                }
+                uv_loop_close(loop);
+            }
+
         }
 
-        v8::Local<v8::Module> module;
-        if (!LoadJSModule(isolate, filePath).ToLocal(&module)) {
-            LogExecution("ModuleInitFail", filePath.c_str(), "module");
-        }
 
-        v8::Local<v8::Value> result;
-
-        result = ExecuteModule(isolate, module, filePath);
-
-        if (result.IsEmpty()) {
-            printf("ExecuteJS Fail.\n");
-        }
-
-        if (DO_DEBUG_LOGGING) {
-            printf("Event Looping Start:\n");
-        }
-//            while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
-        uv_run(loop, UV_RUN_DEFAULT);
-        while (uv_loop_alive(loop) != 0) {
-            while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
-            uv_run(loop, UV_RUN_DEFAULT);
-        }
-        uv_loop_close(loop);
     }
 
     void App::Stop() {
@@ -499,8 +504,7 @@ namespace w8 {
 
     void App::OnUVPrepareCallback(uv_prepare_t *handle) {
         inspector::InspectorClient *client = (inspector::InspectorClient *) handle->data;
-//        printf("%i\n", client->paused);
-//        (*client).GetWSChannel().poll();
+        (*client).GetWSChannel().poll();
     }
 
 }

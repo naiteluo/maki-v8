@@ -34,25 +34,32 @@ add_executable(
         ${APPLICATIONS_SOURCES}
 )
 
-## add executable: start ##
+## add executable: w8 ##
 add_executable(
         ${BINARY}_w8_run
         w8_main.cpp
-        ${V8_RUNNER_SOURCES}
-        ${V8_DEMOS_SOURCES}
         ${UTILS_SOURCES}
         ${COMMON_OGL_SOURCES}
         ${W8_LIB_SOURCES}
 )
 
+## add executable: simplest demo to debug v8 issue ##
+add_executable(
+        ${BINARY}_inspector_run
+        try_inspector.cpp
+        try_inspector/try_inspector.h
+)
 
 # link v8
 target_link_libraries(${BINARY}_run v8_monolith)
 target_link_libraries(${BINARY}_w8_run v8_monolith)
+target_link_libraries(${BINARY}_inspector_run v8_monolith)
 
 # link opengl related lib
 target_link_libraries(${BINARY}_run ${ALL_LIBS})
 target_link_libraries(${BINARY}_w8_run ${ALL_LIBS})
+target_link_libraries(${BINARY}_inspector_run ${ALL_LIBS})
 
 target_link_libraries(${BINARY}_run uv)
 target_link_libraries(${BINARY}_w8_run uv)
+target_link_libraries(${BINARY}_inspector_run uv)

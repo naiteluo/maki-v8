@@ -1,4 +1,7 @@
-print("w888888");
-console.log(1123);
 
+console.log("Enter w8.mis");
+
+/**
+ * bootstrap and run a internal js module
+ */
 __w8__bootstrap();
