@@ -377,6 +377,7 @@ namespace w8 {
         printf("\n\n");
 
         // **important** Missing it will cause ptr issue when setting breaking.
+        // Guessing breakpoint intercept need isolate scope to handle staffs or ranges？
         v8::Isolate::Scope isolate_scope(isolate);
         v8::HandleScope handle_scope(isolate);
         {
@@ -406,7 +407,6 @@ namespace w8 {
                 }
 
                 v8::Local<v8::Value> result;
-
                 result = ExecuteModule(isolate, module, filePath);
 
                 if (result.IsEmpty()) {

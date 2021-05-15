@@ -12,6 +12,5 @@ int main(int argc, char *argv[]) {
     app->Stop();
     delete app;
     w8::App::Dispose();
-
     return 0;
 }
