@@ -1,16 +1,11 @@
 //
-// Created by Jiawei Tan on 2021/5/9.
+// Created by Jiawei Tan on 2021/5/16.
 //
 
-#include "gl.h"
-#include "../v8-binding.h"
+#include "canvas.h"
 
 namespace w8 {
-    namespace gl {
-        void Initialize(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> global) {
-            Canvas::Initialize(isolate, global);
-        }
-
+    namespace gfx {
         void Canvas::Initialize(v8::Isolate *isolate, v8::Local<v8::ObjectTemplate> global) {
             v8::HandleScope handle_scope(isolate);
             v8::Local<v8::FunctionTemplate> constructor_tpl = v8::FunctionTemplate::New(isolate, ConstructorCallback);
@@ -27,6 +22,8 @@ namespace w8 {
 
         Canvas::Canvas(v8::Handle<v8::Object> instance) : V8Object<Canvas>(instance) {
             _hi_str = "canvas hi";
+            webGl2RenderingContext = new WebGL2RenderingContext();
+//            webGl2RenderingContext->CreateAndWrap();
         }
 
         Canvas::~Canvas() {
@@ -51,7 +48,8 @@ namespace w8 {
             v8::HandleScope handle_scope(isolate);
             void *ptr = args.Holder()->GetAlignedPointerFromInternalField(0);
             Canvas *canvas = static_cast<Canvas *>(ptr);
-            args.GetReturnValue().Set(v8::Undefined(isolate));
+
+            args.GetReturnValue().Set(canvas->GetWebGLContext()->Persistent().Get(isolate));
         }
 
         void Canvas::SayHiCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -70,6 +68,8 @@ namespace w8 {
             canvas->_hi_str = *utf8;
         }
 
-
+        WebGL2RenderingContext *Canvas::GetWebGLContext() {
+            return webGl2RenderingContext;
+        }
     }
 }

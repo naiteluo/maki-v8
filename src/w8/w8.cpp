@@ -18,7 +18,7 @@
 #include "uv.h"
 #include "timer.h"
 #include "inspector.h"
-#include "gl/gl.h"
+#include "gfx/gfx.h"
 
 namespace w8 {
 
@@ -110,7 +110,7 @@ namespace w8 {
         global->Set(isolate, "__w8__poll", v8::FunctionTemplate::New(isolate, App::JSFuncPoll));
 
         timer::Initialize(isolate, global);
-        gl::Initialize(isolate, global);
+        gfx::Initialize(isolate, global);
 
         v8::Local<v8::Context> context = v8::Context::New(isolate, NULL, global);
 
@@ -481,7 +481,7 @@ namespace w8 {
     }
 
     void App::JSFuncSleep(const v8::FunctionCallbackInfo<v8::Value> &args) {
-        usleep(1000000);
+        usleep(10000000);
     }
 
     void App::JSFuncPoll(const v8::FunctionCallbackInfo<v8::Value> &args) {
