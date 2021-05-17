@@ -73,5 +73,6 @@ export function canvasGLContextTest() {
 
 export function canvasGLDraw() {
     console.log(mat4.create());
+
 }
 canvasGLDraw();

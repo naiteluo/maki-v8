@@ -26,7 +26,24 @@ namespace w8 {
 
             // add constant
 
-            ADD_CONSTANT(isolate, constructor_tpl_local, "COLOR_BUFFER_BIT", v8::Integer::New(isolate, 0x00004000));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "COLOR_BUFFER_BIT",
+                         v8::Integer::New(isolate, GL_COLOR_BUFFER_BIT));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "ARRAY_BUFFER", v8::Integer::New(isolate, GL_ARRAY_BUFFER));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "DEPTH_TEST", v8::Integer::New(isolate, GL_DEPTH_TEST));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "LEQUAL", v8::Integer::New(isolate, GL_LEQUAL));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "DEPTH_BUFFER_BIT",
+                         v8::Integer::New(isolate, GL_DEPTH_BUFFER_BIT));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "FLOAT", v8::Integer::New(isolate, GL_FLOAT));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "TRIANGLE_STRIP",
+                         v8::Integer::New(isolate, GL_TRIANGLE_STRIP));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "VERTEX_SHADER", v8::Integer::New(isolate, GL_VERTEX_SHADER));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "FRAGMENT_SHADER",
+                         v8::Integer::New(isolate, GL_FRAGMENT_SHADER));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "LINK_STATUS", v8::Integer::New(isolate, GL_LINK_STATUS));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "COMPILE_STATUS",
+                         v8::Integer::New(isolate, GL_COMPILE_STATUS));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "FLOAT", v8::Integer::New(isolate, GL_FLOAT));
+            ADD_CONSTANT(isolate, constructor_tpl_local, "FLOAT", v8::Integer::New(isolate, GL_FLOAT));
 
             constructor_tpl.Reset(isolate, constructor_tpl_local);
 
@@ -100,7 +117,6 @@ namespace w8 {
             glfwTerminate();
         }
 
-
         void WebGL2RenderingContext::EnterContext() {
             assert(context_env_ != NULL);
             glfwMakeContextCurrent(context_env_);
@@ -145,5 +161,76 @@ namespace w8 {
             printText2D(*str, x, y, size);
         }
 
+        void WebGL2RenderingContext::CreateShaderCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::ShaderSourceCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::CompileShaderCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::GetShaderParameterCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::GetShaderInfoLogCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::DeleteShaderCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::CreateProgramCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::AttachShaderCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::LinkProgramCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::GetProgramParameterCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::ClearDepthCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::EnableCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::BindBufferCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::VertexAttribPointerCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::EnableVertexAttribArrayCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::UseProgramCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::UniformMatrix4fvCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
+
+        void WebGL2RenderingContext::DrawArraysCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+
+        }
     }
 }

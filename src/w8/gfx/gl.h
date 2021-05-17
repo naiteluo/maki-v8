@@ -21,7 +21,45 @@ namespace w8 {
 
             static void ClearColorCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
 
+            static void CreateShaderCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void ShaderSourceCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void CompileShaderCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void GetShaderParameterCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void GetShaderInfoLogCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void DeleteShaderCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void CreateProgramCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void AttachShaderCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void LinkProgramCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void GetProgramParameterCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void ClearDepthCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void EnableCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void BindBufferCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void VertexAttribPointerCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void EnableVertexAttribArrayCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void UseProgramCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void UniformMatrix4fvCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+            static void DrawArraysCallback(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+
             /**
+             * temp ticker function for glfw poll
              * @deprecated
              * @param args
              */
