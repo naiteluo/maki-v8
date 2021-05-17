@@ -67,6 +67,15 @@ brew install boost
 
 ## IDE setups
 
+### CLion (Recommended)
+
+Open project and wait for initializing and file indexing. [Get CLion](https://www.jetbrains.com/clion/).
+
+**notes for debug:**
+
+Create new CMake profile in Preferences panel, set build type to "Debug".
+Otherwise, your debugger will not be triggered.
+
 ### vscode
 
 vscode recommended extensions for c/c++:
@@ -84,16 +93,13 @@ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1
 
 **Regenerate** `compile_commands.json` after big changes of the project structure or add new library.
 
-### CLion
-
-Open project and wait for initializing and file indexing. [Get CLion](https://www.jetbrains.com/clion/).
-
-**notes for debug:**
-
-Create new CMake profile in Preferences panel, set build type to "Debug". 
-Otherwise, your debugger will not be triggered.
-
 ## Build and run
+
+js file, and some assets are in `./resouces`, cd into this directory as you working directory. 
+
+### build and run in Clion (Recommended)
+
+open project, build and run.
 
 ### build and run in cli
 
@@ -123,16 +129,10 @@ Otherwise, your debugger will not be triggered.
 
 3. Run
 
-   run main app
+   run w8 app
 
    ```bash
-   ./build/src/maki_run
-   ```
-
-   run test
-
-   ```bash
-   ./build/test/maki_test
+   ./build-*/src/maki_w8_run
    ```
 
 ### build and run in vscode
@@ -145,5 +145,13 @@ Or just use vscode extensions to configure, build and run in vscode.
 ## Debug
 
 Use vscode or clion for life-saving.
+
+### JavaScript debugging with inspector
+
+With the integration of inspector client and websocket service, we now support js debugging in chrome inspector.
+
+1. Run `maki_w8_run` with `--inspector_enabled` flag. Javascript execution will wait until inspector connection opened.
+2. Run `open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args --user-data-dir="/tmp/chrome_dev_test" --remote-debugging-port=9222 http://localhost:9222/devtools/inspector.html?ws=localhost:9229`
+
 
 
