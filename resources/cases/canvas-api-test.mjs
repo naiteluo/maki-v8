@@ -1,3 +1,7 @@
+require("./gl-matrix.mjs");
+const {mat4} = glMatrix;
+
+console.log(mat4);
 export function canvasApiTest() {
     let canvas = new Canvas();
     console.log("canvas:", canvas);
@@ -66,3 +70,8 @@ export function canvasGLContextTest() {
 
     render();
 }
+
+export function canvasGLDraw() {
+    console.log(mat4.create());
+}
+canvasGLDraw();

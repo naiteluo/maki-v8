@@ -25,6 +25,7 @@ namespace w8 {
     public:
 
         static v8::Isolate *isolate;
+        static v8::Persistent<v8::Context> globalContext;
         static GLFWwindow *window;
         static std::unique_ptr<v8::Platform> platform;
         static uv_loop_t *loop;
@@ -44,21 +45,15 @@ namespace w8 {
 
         static void Dispose();
 
-        static void JSFuncGLText(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-        static void JSFuncGLClear(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-        static void JSFuncGLFWTick(const v8::FunctionCallbackInfo<v8::Value> &args);
-
         static void JSFuncPrint(const v8::FunctionCallbackInfo<v8::Value> &args);
-
-        static void JSFuncLog(const v8::FunctionCallbackInfo<v8::Value> &args);
 
         static void JSFuncBootstrap(const v8::FunctionCallbackInfo<v8::Value> &args);
 
         static void JSFuncSleep(const v8::FunctionCallbackInfo<v8::Value> &args);
 
         static void JSFuncPoll(const v8::FunctionCallbackInfo<v8::Value> &args);
+
+        static void JSFuncRequire(const v8::FunctionCallbackInfo<v8::Value> &args);
 
         static void OnUVPrepareCallback(uv_prepare_t *handle);
 

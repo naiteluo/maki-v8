@@ -29,6 +29,7 @@ namespace w8 {
 
     GLFWwindow *App::window = NULL;
     App *App::instance = NULL;
+    v8::Persistent<v8::Context> App::globalContext;
     v8::Isolate *App::isolate = NULL;
     uv_loop_t *App::loop = uv_default_loop();
     uv_prepare_t *App::prepare_handle;
@@ -74,20 +75,15 @@ namespace w8 {
         // try to add a nested object template
         v8::Local<v8::ObjectTemplate> inner = v8::ObjectTemplate::New(isolate);
         v8::Local<v8::String> inner_version = v8::String::NewFromUtf8(isolate, "version 3.0").ToLocalChecked();
-        inner->Set(isolate, "log", v8::FunctionTemplate::New(isolate, App::JSFuncLog));
         inner->Set(isolate, "version", inner_version);
 
         global->Set(isolate, "inner", inner);
 
+        global->Set(isolate, "require", v8::FunctionTemplate::New(isolate, App::JSFuncRequire));
+
         global->Set(isolate, "version", version_str);
         global->Set(isolate, "print",
-                    v8::FunctionTemplate::New(isolate, JSFuncPrint));
-        global->Set(isolate, "glClear",
-                    v8::FunctionTemplate::New(isolate, App::JSFuncGLClear));
-        global->Set(isolate, "glText",
-                    v8::FunctionTemplate::New(isolate, App::JSFuncGLText));
-        global->Set(isolate, "glfwTick",
-                    v8::FunctionTemplate::New(isolate, App::JSFuncGLFWTick));
+                    v8::FunctionTemplate::New(isolate, App::JSFuncPrint));
 
         global->Set(isolate, "__w8__bootstrap", v8::FunctionTemplate::New(isolate, App::JSFuncBootstrap));
         global->Set(isolate, "__w8__sleep", v8::FunctionTemplate::New(isolate, App::JSFuncSleep));
@@ -109,18 +105,7 @@ namespace w8 {
         v8::HandleScope handle_scope(isolate);
         v8::Local<v8::Value> arg = args[0];
         v8::String::Utf8Value value(isolate, arg);
-        printf("LOG: %s\n", *value);
-    }
-
-    void App::JSFuncLog(const v8::FunctionCallbackInfo<v8::Value> &args) {
-        printf("JSFuncLog ");
-        if (args.Length() < 1)
-            return;
-        v8::Isolate *isolate = args.GetIsolate();
-        v8::HandleScope handle_scope(isolate);
-        v8::Local<v8::Value> arg = args[0];
-        v8::String::Utf8Value value(isolate, arg);
-        printf("LOG: %s\n", *value);
+        printf("Print: %s\n", *value);
     }
 
     const char *ToCString(const v8::String::Utf8Value &value) {
@@ -326,6 +311,7 @@ namespace w8 {
         {
 
             v8::Local<v8::Context> context = CreateAppContext(isolate);
+            globalContext.Reset(isolate, context);
 
             // **important** Enter the context for compiling and running the hello world script.
             v8::Context::Scope context_scope(context);
@@ -377,44 +363,6 @@ namespace w8 {
 
     }
 
-
-    void App::JSFuncGLText(const v8::FunctionCallbackInfo<v8::Value> &args) {
-        v8::Isolate *isolate = args.GetIsolate();
-        v8::Local<v8::Context> context = isolate->GetCurrentContext();
-
-        v8::Local<v8::Value> arg = args[0];
-        v8::String::Utf8Value str(isolate, arg);
-
-        v8::Local<v8::Value> arg1 = args[1];
-        int x = arg1->Int32Value(context).ToChecked();
-        v8::Local<v8::Value> arg2 = args[2];
-        int y = arg2->Int32Value(context).ToChecked();
-        v8::Local<v8::Value> arg3 = args[3];
-        int size = arg3->Int32Value(context).ToChecked();
-
-        printText2D(*str, x, y, size);
-    }
-
-
-    void App::JSFuncGLClear(const v8::FunctionCallbackInfo<v8::Value> &args) {
-        glClear(GL_COLOR_BUFFER_BIT);
-    }
-
-    void App::JSFuncGLFWTick(const v8::FunctionCallbackInfo<v8::Value> &args) {
-        v8::Isolate *isolate = args.GetIsolate();
-        // Swap buffers
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-        int f;
-        if (!(glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-              glfwWindowShouldClose(window) == 0)) {
-            f = 0;
-        } else {
-            f = 1;
-        }
-        args.GetReturnValue().Set(v8::Integer::New(isolate, f));
-    }
-
     void App::JSFuncBootstrap(const v8::FunctionCallbackInfo<v8::Value> &args) {
         v8::Isolate *isolate = args.GetIsolate();
 
@@ -445,6 +393,48 @@ namespace w8 {
         bool isLoopAlive = uv_loop_alive(loop);
         bool hasUnhandledTimer = timer::Timer::timer_pool.size() > 0;
         return (isLoopAlive && hasUnhandledTimer);
+    }
+
+    void App::JSFuncRequire(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        v8::Isolate *isolate = args.GetIsolate();
+        v8::HandleScope handle_scope(isolate);
+        v8::TryCatch try_catch(isolate);
+        v8::Local<v8::Value> path = args[0];
+        v8::String::Utf8Value path_str(isolate, path);
+        v8::Local<v8::Context> context = globalContext.Get(isolate);
+
+        const char *file_path_c = ToCString(path_str);
+        // read from file
+        v8::Local<v8::String> source_str;
+        if (!FileReader::read(isolate, file_path_c).ToLocal(&source_str)) {
+            fprintf(stderr, "** Error reading file: '%s'. **\n", file_path_c);
+            return;
+        }
+
+        const char *module_or_script = "Script";
+
+        v8::Local<v8::Script> script;
+        if (!v8::Script::Compile(context, source_str).ToLocal(&script)) {
+            PrintException(isolate, &try_catch);
+            LogExecution("CompileFail", file_path_c, module_or_script);
+        } else {
+            v8::Local<v8::Value> result;
+            LogExecution("Start", file_path_c, module_or_script);
+            if (!script->Run(context).ToLocal(&result)) {
+                assert(try_catch.HasCaught());
+                PrintException(isolate, &try_catch);
+                LogExecution("Fail", file_path_c, module_or_script);
+            } else {
+                assert(!try_catch.HasCaught());
+                v8::String::Utf8Value utf8(isolate, result);
+                if (DO_DEBUG_LOGGING) {
+                    printf("Execute result: %s\n", *utf8);
+                }
+                LogExecution("Success", file_path_c, module_or_script);
+                args.GetReturnValue().Set(result);
+            }
+        }
+        return;
     }
 
 }
