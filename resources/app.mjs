@@ -1,6 +1,6 @@
 // import {runTaskTest, runClearTimeoutTest} from "./cases/tasks-test.mjs";
 // import {drawTextExample} from "./example/draw-text.js";
-import {canvasApiTest} from "./cases/canvas-api-test.mjs";
+import {canvasApiTest, canvasGLContextTest} from "./cases/canvas-api-test.mjs";
 // import {tryCatchTest} from "./cases/try-catch-test.js";
 
 console.log("Enter app.mjs");
@@ -13,17 +13,18 @@ console.log("Enter app.mjs");
 /**
  * canvas class test
  */
-canvasApiTest();
+// canvasApiTest();
+canvasGLContextTest();
 
 /**
  * try catch test
  */
 // tryCatchTest();
 
-function wait() {
-    setTimeout(() => {
-        wait();
-    }, 100);
-}
-wait();
+// function wait() {
+//     setTimeout(() => {
+//         wait();
+//     }, 100);
+// }
+// wait();
 // __w8__sleep();

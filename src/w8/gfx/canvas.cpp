@@ -18,13 +18,14 @@ namespace w8 {
             ADD_PROTO_METHOD(isolate, constructor_tpl, "setMsg", SetMsgCallback);
 
             ADD_ACCESSOR(isolate, constructor_tpl, "height", GetterHeight, SetterHeight);
+            ADD_ACCESSOR(isolate, constructor_tpl, "width", GetterWidth, SetterWidth);
 
             global->Set(v8::String::NewFromUtf8(isolate, "Canvas").ToLocalChecked(), constructor_tpl);
         }
 
-        Canvas::Canvas(v8::Handle<v8::Object> instance) : V8Object<Canvas>(instance), _height(1), _width(1),
+        Canvas::Canvas(v8::Handle<v8::Object> instance) : V8Object<Canvas>(instance), _width(600), _height(400),
                                                           _msg("none") {
-            webGl2RenderingContext = new WebGL2RenderingContext();
+            webGl2RenderingContext = new WebGL2RenderingContext(_width, _height);
         }
 
         Canvas::~Canvas() {
@@ -82,6 +83,17 @@ namespace w8 {
                                   const v8::PropertyCallbackInfo<void> &info) {
             Canvas *canvas = Canvas::UnWrap(info.Holder());
             canvas->_height = value->Int32Value(info.GetIsolate()->GetCurrentContext()).FromJust();
+        }
+
+        void Canvas::GetterWidth(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info) {
+            Canvas *canvas = Canvas::UnWrap(info.Holder());
+            info.GetReturnValue().Set(v8::Integer::New(info.GetIsolate(), canvas->_width));
+        }
+
+        void Canvas::SetterWidth(v8::Local<v8::String> name, v8::Local<v8::Value> value,
+                                  const v8::PropertyCallbackInfo<void> &info) {
+            Canvas *canvas = Canvas::UnWrap(info.Holder());
+            canvas->_width = value->Int32Value(info.GetIsolate()->GetCurrentContext()).FromJust();
         }
     }
 }

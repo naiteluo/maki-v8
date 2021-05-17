@@ -360,22 +360,6 @@ namespace w8 {
     }
 
     void App::Run() {
-
-        // Dark blue background
-        glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
-
-        glGenVertexArrays(1, &VertexArrayID);
-        glBindVertexArray(VertexArrayID);
-
-        // Initialize our little text library with the Holstein font
-        initText2D("Holstein.DDS");
-
-        // For speed computation
-        lastTime = glfwGetTime();
-        nbFrames = 0;
-
-        printf("\n\n");
-
         // **important** Missing it will cause ptr issue when setting breaking.
         // Guessing breakpoint intercept need isolate scope to handle staffs or ranges？
         v8::Isolate::Scope isolate_scope(isolate);
@@ -430,10 +414,7 @@ namespace w8 {
     }
 
     void App::Stop() {
-        glDeleteVertexArrays(1, &VertexArrayID);
-        cleanupText2D();
-        // Close OpenGL window and terminate GLFW
-        glfwTerminate();
+
     }
 
 

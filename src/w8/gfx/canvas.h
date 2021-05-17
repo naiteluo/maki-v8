@@ -45,6 +45,9 @@ namespace w8 {
             static void GetterHeight(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value>& info);
             static void SetterHeight(v8::Local<v8::String> name, v8::Local<v8::Value> value,
                                      const v8::PropertyCallbackInfo<void> &info);
+            static void GetterWidth(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value>& info);
+            static void SetterWidth(v8::Local<v8::String> name, v8::Local<v8::Value> value,
+                                     const v8::PropertyCallbackInfo<void> &info);
         };
     }
 }
