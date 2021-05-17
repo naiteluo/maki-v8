@@ -35,6 +35,20 @@ namespace w8 {
 
         WebGL2RenderingContext::WebGL2RenderingContext(int w, int h)
                 : V8Object<WebGL2RenderingContext>(), width_(w), height_(h) {
+
+            // Initialise GLFW
+            if (!glfwInit()) {
+                fprintf(stderr, "Failed to initialize GLFW\n");
+                getchar();
+                return;
+            }
+            glfwWindowHint(GLFW_SAMPLES, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,
+                           GL_TRUE); // To make MacOS happy; should not be needed
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
             context_env_ = glfwCreateWindow(width_, height_, "WebGL2RenderingContext", NULL, NULL);
             if (context_env_ == NULL) {
                 fprintf(stderr,

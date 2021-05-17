@@ -20,13 +20,10 @@ namespace w8 {
     class App {
     private:
         v8::Isolate::CreateParams create_params;
-        GLuint VertexArrayID;
         static App *instance;
 
     public:
 
-        static double lastTime;
-        static int nbFrames;
         static v8::Isolate *isolate;
         static GLFWwindow *window;
         static std::unique_ptr<v8::Platform> platform;
@@ -70,8 +67,6 @@ namespace w8 {
         App();
 
         ~App();
-
-        int OpenWindow();
 
         void Run();
 

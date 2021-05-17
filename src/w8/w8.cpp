@@ -35,25 +35,9 @@ namespace w8 {
 
     Options App::options;
 
-    double App::lastTime;
-    int App::nbFrames;
-
     int App::Initialize(int _argc, char **_argv) {
         options.Parse(_argc, _argv);
         options.Print();
-
-        // Initialise GLFW
-        if (!glfwInit()) {
-            fprintf(stderr, "Failed to initialize GLFW\n");
-            getchar();
-            return -1;
-        }
-        glfwWindowHint(GLFW_SAMPLES, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT,
-                       GL_TRUE); // To make MacOS happy; should not be needed
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         // Initialize V8.
         v8::V8::InitializeICUDefaultLocation(options.base_path.get());
@@ -137,31 +121,6 @@ namespace w8 {
         v8::Local<v8::Value> arg = args[0];
         v8::String::Utf8Value value(isolate, arg);
         printf("LOG: %s\n", *value);
-    }
-
-    int App::OpenWindow() {
-        // Open a window and create its OpenGL context
-        window = glfwCreateWindow(500, 500, "V8", NULL, NULL);
-        if (window == NULL) {
-            fprintf(stderr,
-                    "Failed to open GLFW window. If you have an Intel GPU, they are "
-                    "not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
-            getchar();
-            glfwTerminate();
-            return -1;
-        }
-        glfwMakeContextCurrent(window);
-        // Ensure we can capture the escape key being pressed below
-        glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-
-        // note: make context before init glew
-        // Initialize GLEW
-        if (glewInit() != GLEW_OK) {
-            fprintf(stderr, "Failed to initialize GLEW\n");
-            getchar();
-            glfwTerminate();
-        }
-        return 0;
     }
 
     const char *ToCString(const v8::String::Utf8Value &value) {
@@ -408,6 +367,7 @@ namespace w8 {
                     while (v8::platform::PumpMessageLoop(platform.get(), isolate)) continue;
                     uv_run(loop, UV_RUN_DEFAULT);
                 }
+                // todo: uv_default_loop is not thread safe. close this loop may crash. init loop manually.
                 uv_loop_close(loop);
             }
         }
