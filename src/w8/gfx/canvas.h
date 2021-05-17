@@ -19,9 +19,9 @@ namespace w8 {
 
             static void GetContextCallback(const v8::FunctionCallbackInfo <v8::Value> &args);
 
-            static void SayHiCallback(const v8::FunctionCallbackInfo <v8::Value> &args);
+            static void GetMsgCallback(const v8::FunctionCallbackInfo <v8::Value> &args);
 
-            static void SetHiCallback(const v8::FunctionCallbackInfo <v8::Value> &args);
+            static void SetMsgCallback(const v8::FunctionCallbackInfo <v8::Value> &args);
 
             static const char *const ClassName() { return "Canvas"; }
 
@@ -38,9 +38,13 @@ namespace w8 {
             v8::Persistent <v8::Object> instance_;
             int _width;
             int _height;
-            std::string _hi_str;
+            std::string _msg;
 
             WebGL2RenderingContext *webGl2RenderingContext;
+
+            static void GetterHeight(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value>& info);
+            static void SetterHeight(v8::Local<v8::String> name, v8::Local<v8::Value> value,
+                                     const v8::PropertyCallbackInfo<void> &info);
         };
     }
 }

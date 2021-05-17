@@ -14,16 +14,17 @@ namespace w8 {
             constructor_tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
             ADD_PROTO_METHOD(isolate, constructor_tpl, "getContext", GetContextCallback);
-            ADD_PROTO_METHOD(isolate, constructor_tpl, "sayHi", SayHiCallback);
-            ADD_PROTO_METHOD(isolate, constructor_tpl, "setHi", SetHiCallback);
+            ADD_PROTO_METHOD(isolate, constructor_tpl, "getMsg", GetMsgCallback);
+            ADD_PROTO_METHOD(isolate, constructor_tpl, "setMsg", SetMsgCallback);
+
+            ADD_ACCESSOR(isolate, constructor_tpl, "height", GetterHeight, SetterHeight);
 
             global->Set(v8::String::NewFromUtf8(isolate, "Canvas").ToLocalChecked(), constructor_tpl);
         }
 
-        Canvas::Canvas(v8::Handle<v8::Object> instance) : V8Object<Canvas>(instance) {
-            _hi_str = "canvas hi";
+        Canvas::Canvas(v8::Handle<v8::Object> instance) : V8Object<Canvas>(instance), _height(1), _width(1),
+                                                          _msg("none") {
             webGl2RenderingContext = new WebGL2RenderingContext();
-//            webGl2RenderingContext->CreateAndWrap();
         }
 
         Canvas::~Canvas() {
@@ -52,24 +53,35 @@ namespace w8 {
             args.GetReturnValue().Set(canvas->GetWebGLContext()->Persistent().Get(isolate));
         }
 
-        void Canvas::SayHiCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        void Canvas::GetMsgCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
             v8::Isolate *isolate = args.GetIsolate();
             v8::HandleScope handle_scope(isolate);
             Canvas *canvas = Canvas::GetInstanceFromV8(args.Holder());
             args.GetReturnValue().Set(
-                    v8::String::NewFromUtf8(isolate, (canvas->_hi_str).c_str()).ToLocalChecked());
+                    v8::String::NewFromUtf8(isolate, (canvas->_msg).c_str()).ToLocalChecked());
         }
 
-        void Canvas::SetHiCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+        void Canvas::SetMsgCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
             v8::Isolate *isolate = args.GetIsolate();
             v8::HandleScope handle_scope(isolate);
             Canvas *canvas = Canvas::GetInstanceFromV8(args.Holder());
             v8::String::Utf8Value utf8(isolate, args[0]);
-            canvas->_hi_str = *utf8;
+            canvas->_msg = *utf8;
         }
 
         WebGL2RenderingContext *Canvas::GetWebGLContext() {
             return webGl2RenderingContext;
+        }
+
+        void Canvas::GetterHeight(v8::Local<v8::String> name, const v8::PropertyCallbackInfo<v8::Value> &info) {
+            Canvas *canvas = Canvas::UnWrap(info.Holder());
+            info.GetReturnValue().Set(v8::Integer::New(info.GetIsolate(), canvas->_height));
+        }
+
+        void Canvas::SetterHeight(v8::Local<v8::String> name, v8::Local<v8::Value> value,
+                                  const v8::PropertyCallbackInfo<void> &info) {
+            Canvas *canvas = Canvas::UnWrap(info.Holder());
+            canvas->_height = value->Int32Value(info.GetIsolate()->GetCurrentContext()).FromJust();
         }
     }
 }

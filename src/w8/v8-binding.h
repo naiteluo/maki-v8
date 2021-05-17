@@ -31,6 +31,12 @@ namespace w8 {
                                                   static_cast<v8::PropertyAttribute>(v8::ReadOnly | v8::DontDelete));
     };
 
+    void inline ADD_ACCESSOR(v8::Isolate *isolate, v8::Local<v8::FunctionTemplate> constructor_tpl, const char * name, v8::AccessorGetterCallback getter, v8::AccessorSetterCallback setter) {
+        v8::Local<v8::String> prop_name = v8::String::NewFromUtf8(isolate, name).ToLocalChecked();
+        v8::Local<v8::ObjectTemplate> instance_tpl = constructor_tpl->InstanceTemplate();
+        instance_tpl->SetAccessor(prop_name, getter, setter);
+    };
+
     /**
      * Simplest base class to help construct bi-direction bridge between v8 object and c++ object.
      * inherit it when you need binding a c++ class object to v8 object.
@@ -56,18 +62,6 @@ namespace w8 {
         inline v8::Persistent<v8::Object> &Persistent() {
             assert(!handle_.IsEmpty());
             return handle_;
-        }
-
-        inline v8::Local<v8::Object> CreateAndWrap() {
-            assert(handle_.IsEmpty());
-            v8::Isolate *isolate = v8::Isolate::GetCurrent();
-            v8::EscapableHandleScope handle_scope(isolate);
-            v8::Local<v8::Context> context = isolate->GetCurrentContext();
-            v8::Local<v8::Object> object = constructor_tpl.Get(isolate)->GetFunction(context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
-            object->SetAlignedPointerInInternalField(0, this);
-            handle_.Reset(isolate, object);
-            handle_.SetWeak(this, WeakCallback, v8::WeakCallbackType::kParameter);
-            return handle_scope.Escape(object);
         }
 
         inline static T *UnWrap(v8::Local<v8::Object> handle) {
@@ -125,6 +119,18 @@ namespace w8 {
         }
 
     private:
+
+        inline v8::Local<v8::Object> CreateAndWrap() {
+            assert(handle_.IsEmpty());
+            v8::Isolate *isolate = v8::Isolate::GetCurrent();
+            v8::EscapableHandleScope handle_scope(isolate);
+            v8::Local<v8::Context> context = isolate->GetCurrentContext();
+            v8::Local<v8::Object> object = constructor_tpl.Get(isolate)->GetFunction(context).ToLocalChecked()->NewInstance(context).ToLocalChecked();
+            object->SetAlignedPointerInInternalField(0, this);
+            handle_.Reset(isolate, object);
+            handle_.SetWeak(this, WeakCallback, v8::WeakCallbackType::kParameter);
+            return handle_scope.Escape(object);
+        }
 
         v8::Persistent<v8::Object> handle_;
 
